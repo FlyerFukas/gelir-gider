@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Akıllı Gelir Gider Yöneticisi</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#005bbf">
+<meta name="description" content="Aylık gelir, gider ve taksitlerinizi tek yerden takip edin.">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Gelir Gider">
+<style>
+  :root{
+    --primary:#005bbf; --primary-light:#e8efff; --on-primary:#fff;
+    --bg:#f0f2f7; --surface:#ffffff; --outline:#727785;
+    --text:#1a1c22; --text-2:#5b6070;
+    --green:#0e7a3c; --green-bg:#a7f0b9; --red:#c62828;
+    --radius:16px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
+    max-width:520px;margin:0 auto;min-height:100vh;
+    padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+  header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid #e2e5ee;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px}
+  header h1{font-size:20px;font-weight:800;color:var(--primary)}
+  .hdr-btn{background:none;border:none;font-size:22px;cursor:pointer;color:var(--primary);width:44px;height:44px;border-radius:50%}
+  .hdr-btn:active{background:var(--primary-light)}
+  main{padding:16px}
+  .page{display:none}
+  .page.active{display:block;animation:fade .18s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  .card{background:var(--surface);border-radius:var(--radius);padding:18px;margin-bottom:14px;
+    box-shadow:0 1px 3px rgba(20,40,80,.06);border:1px solid #e8eaf2}
+  .card.acc-green{border-left:5px solid #0a7a35}
+  .card.acc-red{border-left:5px solid #c62828}
+  .card h3{font-size:17px;font-weight:800;margin-bottom:4px}
+  .muted{color:var(--text-2);font-size:13px}
+  .amount-lg{font-size:32px;font-weight:900;margin-top:10px}
+  .amount-md{font-size:24px;font-weight:900;margin-top:8px}
+  .arrow-up{color:var(--red);font-weight:700}
+  .arrow-down{color:var(--green);font-weight:700}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+    background:var(--primary);color:#fff;border:none;border-radius:14px;
+    padding:15px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+  .btn:active{opacity:.85}
+  .btn.small{width:auto;padding:10px 16px;font-size:14px}
+
+  /* donut */
+  .donut-wrap{display:flex;justify-content:center;margin:14px 0}
+  .donut{width:170px;height:170px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative}
+  .donut-inner{width:128px;height:128px;border-radius:50%;background:var(--surface);
+    display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .donut-inner b{font-size:28px}
+  .donut-foot{display:flex;justify-content:space-between;font-size:14px;margin-top:4px}
+  .donut-foot .hedef{color:var(--primary);font-weight:700}
+
+  .list-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f0f1f6}
+  .list-item:last-child{border-bottom:none}
+  .li-icon{width:44px;height:44px;border-radius:12px;background:#eef0f6;display:flex;
+    align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .li-body{flex:1;min-width:0}
+  .li-title{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .li-sub{font-size:13px;color:var(--text-2)}
+  .li-amt{font-weight:800;font-size:16px;white-space:nowrap}
+  .li-amt.neg{color:var(--text)}
+  .li-amt.pos{color:var(--green)}
+  .li-del{background:none;border:none;color:#c62828;font-size:17px;cursor:pointer;padding:6px 2px;flex-shrink:0}
+  .li-edit{background:none;border:none;font-size:16px;cursor:pointer;padding:6px 2px;flex-shrink:0}
+  .li-icon{flex-shrink:0}
+
+  /* forms */
+  label.fld{display:block;font-weight:700;font-size:14px;margin:14px 0 6px}
+  input[type=number],input[type=text],input[type=date],select{
+    width:100%;padding:13px 14px;border:1.5px solid #d5d9e4;border-radius:12px;
+    font-size:16px;font-family:inherit;background:#f7f8fc;color:var(--text)}
+  input:focus,select:focus{outline:2px solid var(--primary);border-color:var(--primary);background:#fff}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .chip{padding:10px 14px;border-radius:12px;border:1.5px solid #d5d9e4;background:#f2f3f8;
+    font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text)}
+  .chip.sel{background:var(--primary-light);border-color:var(--primary);color:var(--primary)}
+  .seg{display:flex;background:#e7e9f1;border-radius:12px;padding:4px;margin-bottom:14px}
+  .seg button{flex:1;border:none;background:none;padding:10px;border-radius:9px;font-weight:700;
+    font-size:14px;cursor:pointer;font-family:inherit;color:var(--text-2)}
+  .seg button.sel{background:var(--primary);color:#fff}
+  .row-between{display:flex;align-items:center;justify-content:space-between;gap:10px}
+
+  /* switch */
+  .switch{position:relative;width:52px;height:30px;flex-shrink:0}
+  .switch input{opacity:0;width:0;height:0}
+  .slider-tg{position:absolute;inset:0;background:#c9cdd9;border-radius:30px;transition:.2s;cursor:pointer}
+  .slider-tg:before{content:"";position:absolute;width:24px;height:24px;left:3px;top:3px;
+    background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .switch input:checked + .slider-tg{background:var(--primary)}
+  .switch input:checked + .slider-tg:before{transform:translateX(22px)}
+  input[type=range]{width:100%;accent-color:var(--primary);margin-top:10px}
+  .range-labels{display:flex;justify-content:space-between;font-size:12px;color:var(--text-2)}
+
+  /* bottom nav */
+  nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;
+    background:var(--bg);border-top:1px solid #dde0ea;display:flex;z-index:20;
+    padding:8px 10px calc(12px + env(safe-area-inset-bottom,0px))}
+  nav button{flex:1;border:none;background:none;display:flex;flex-direction:column;align-items:center;
+    gap:3px;font-size:12px;font-weight:600;color:var(--text-2);cursor:pointer;font-family:inherit;padding:6px 0}
+  nav button .ico{font-size:20px;line-height:1;padding:5px 16px;border-radius:14px}
+  nav button.sel{color:#0a5c2b}
+  nav button.sel .ico{background:var(--green-bg)}
+
+  .empty{text-align:center;color:var(--text-2);padding:24px 10px;font-size:14px}
+  .group-title{font-size:17px;font-weight:800;margin:18px 0 8px}
+  .fixed-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .fixed-row input.fx-name{flex:1.2}
+  .fixed-row input.fx-amt{flex:1}
+  .icon-btn{background:none;border:none;font-size:20px;cursor:pointer;padding:4px}
+  .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1a1c22;color:#fff;
+    padding:12px 22px;border-radius:12px;font-size:14px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:50}
+  .toast.show{opacity:1}
+  .taksit-preview{background:var(--primary-light);color:var(--primary);border-radius:10px;
+    padding:10px 12px;font-size:14px;font-weight:700;margin-top:10px}
+
+  /* PWA kurulum / güncelleme çubukları */
+  .bar{display:none;align-items:center;gap:12px;border-radius:14px;padding:14px;margin-bottom:14px}
+  .bar.show{display:flex}
+  .bar-install{background:var(--primary-light);border:1.5px solid #b9d0f5}
+  .bar-update{background:#fff6e0;border:1.5px solid #f0d089}
+  .bar-txt{flex:1;font-size:14px;line-height:1.35}
+  .bar-txt b{display:block;font-size:15px;margin-bottom:2px}
+  .bar button{border:none;border-radius:10px;padding:11px 16px;font-weight:700;font-size:14px;
+    cursor:pointer;font-family:inherit;background:var(--primary);color:#fff;white-space:nowrap;min-height:44px}
+  .bar .bar-x{background:none;color:var(--text-2);font-size:20px;padding:6px 8px;min-height:0}
+  .install-help{background:var(--surface);border:1px solid #e8eaf2;border-radius:12px;
+    padding:12px 14px;font-size:13.5px;line-height:1.55;color:var(--text-2);margin-top:10px}
+  .install-help b{color:var(--text)}
+
+  /* 5'li nav için daralt */
+  nav button{font-size:11px}
+  nav button .ico{padding:5px 13px}
+
+  /* aylık gider dağılımı çubuğu */
+  .stackbar{display:flex;height:22px;border-radius:11px;overflow:hidden;background:#e6e9f0;margin:4px 0 12px}
+  .seg-fixed{background:#c62828;height:100%;transition:width .3s}
+  .seg-inst{background:#7a5af0;height:100%;transition:width .3s}
+  .seg-var{background:#e8912a;height:100%;transition:width .3s}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:13px;color:var(--text-2)}
+  .legend b{color:var(--text);margin-left:5px}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:5px}
+  .dot-fixed{background:#c62828}.dot-inst{background:#7a5af0}.dot-var{background:#e8912a}
+
+  /* ana sayfa küçük puntolu gider listeleri */
+  .mini-list{margin-top:2px}
+  .mini-row{display:flex;justify-content:space-between;gap:10px;align-items:baseline;
+    padding:6px 0;border-bottom:1px solid #f2f3f7;font-size:13px}
+  .mini-row:last-child{border-bottom:none}
+  .mini-row span{color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mini-row b{font-weight:700;white-space:nowrap;color:var(--text)}
+  .mini-row .mr-date{font-size:11px;color:#9aa1b0;margin-left:6px}
+
+  /* denge sayfası */
+  .bal-eq{display:flex;align-items:center;justify-content:space-between;gap:4px;text-align:center}
+  .bal-eq-item{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+  .bal-eq-item b{font-size:18px;white-space:nowrap}
+  .bal-op{font-size:18px;color:var(--text-2);font-weight:700}
+  .pos{color:var(--green)} .neg2{color:var(--red)}
+  .cmpbar{height:14px;border-radius:7px;background:#e6e9f0;overflow:hidden;margin:16px 0 6px}
+  .cmp-inc{height:100%;background:var(--primary);width:0;transition:width .3s}
+  .cmp-legend{font-size:13px;color:var(--text-2)}
+  .brk{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f0f1f6;font-size:14px}
+  .brk b{font-weight:800}
+  .brk-total{border-bottom:none;border-top:2px solid #e2e5ee;margin-top:4px;padding-top:11px;font-size:15px}
+
+  /* kilit ekranı + desen padi */
+  .lock{position:fixed;inset:0;z-index:100;background:var(--bg);display:none;
+    align-items:center;justify-content:center;padding:24px}
+  .lock.show{display:flex}
+  .lock-box{width:100%;max-width:360px;text-align:center}
+  .lock-emoji{font-size:40px;margin-bottom:6px}
+  .lock-box h2{font-size:22px;font-weight:900;margin-bottom:4px}
+  .pad{width:100%;max-width:300px;aspect-ratio:1/1;touch-action:none;margin:18px auto;display:block;
+    background:var(--surface);border-radius:20px;border:1px solid #e2e5ee}
+  .lock-actions{margin-top:6px}
+  .shake{animation:shk .4s}
+  @keyframes shk{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+</style>
+</head>
+<body>
+
+<header>
+  <button class="hdr-btn" id="prevPeriod">‹</button>
+  <h1 id="periodTitle">—</h1>
+  <button class="hdr-btn" id="nextPeriod">›</button>
+</header>
+
+<main>
+  <!-- ANA SAYFA -->
+  <section class="page" id="page-home">
+    <div class="bar bar-update" id="updateBar">
+      <div class="bar-txt"><b>Yeni sürüm hazır</b>Güncellemek için yenileyin.</div>
+      <button id="doUpdate">Yenile</button>
+    </div>
+    <div class="bar bar-install" id="installBar">
+      <div class="bar-txt"><b>Telefonuna kur</b>Ana ekrandan tek dokunuşla aç, internetsiz çalışır.</div>
+      <button id="doInstall">Kur</button>
+      <button class="bar-x" id="dismissInstall" title="Kapat">✕</button>
+    </div>
+    <div class="card acc-green">
+      <div class="muted">Toplam Gelir</div>
+      <div class="amount-lg"><span class="arrow-down">↓</span> <span id="homeIncome">₺0</span></div>
+    </div>
+    <div class="card">
+      <div class="row-between">
+        <h3>Aylık Gider Dağılımı</h3>
+        <b id="homeExpTotal" style="font-size:18px">₺0</b>
+      </div>
+      <div class="muted" style="margin:2px 0 10px">Bu dönemde sabit, taksit ve değişken giderlerinin toplamı.</div>
+      <div class="stackbar" id="homeStack">
+        <div class="seg-fixed" id="segFixed"></div>
+        <div class="seg-inst" id="segInst"></div>
+        <div class="seg-var" id="segVar"></div>
+      </div>
+      <div class="legend">
+        <span><i class="dot dot-fixed"></i>Sabit<b id="legFixed">₺0</b></span>
+        <span><i class="dot dot-inst"></i>Taksit<b id="legInst">₺0</b></span>
+        <span><i class="dot dot-var"></i>Değişken<b id="legVar">₺0</b></span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row-between"><h3>Aylık Sabit Giderler</h3><b id="fixedListTotal" style="font-size:15px">₺0</b></div>
+      <div id="homeFixedList" class="mini-list"></div>
+    </div>
+    <div class="card">
+      <div class="row-between"><h3>Değişken Harcamalar</h3><b id="varListTotal" style="font-size:15px">₺0</b></div>
+      <div id="homeVarList" class="mini-list"></div>
+    </div>
+    <div class="card">
+      <div class="row-between">
+        <h3>Yaklaşan Taksitler</h3>
+        <span class="muted" id="taksitCount"></span>
+      </div>
+      <div id="homeInstallments"></div>
+    </div>
+  </section>
+
+  <!-- DENGE -->
+  <section class="page" id="page-balance">
+    <h2 style="font-size:22px;font-weight:900;margin-bottom:2px">Gelir – Gider Dengesi</h2>
+    <p class="muted" id="balPeriod" style="margin-bottom:14px">—</p>
+
+    <div class="card">
+      <div class="bal-eq">
+        <div class="bal-eq-item"><span class="muted">Gelir</span><b class="pos" id="balIncome">₺0</b></div>
+        <span class="bal-op">−</span>
+        <div class="bal-eq-item"><span class="muted">Gider</span><b class="neg2" id="balExpense">₺0</b></div>
+        <span class="bal-op">=</span>
+        <div class="bal-eq-item"><span class="muted" id="balNetLabel">Kalan</span><b id="balNet">₺0</b></div>
+      </div>
+      <div class="cmpbar"><div class="cmp-inc" id="cmpInc"></div></div>
+      <div class="cmp-legend">Gelirin <b id="cmpPct">%0</b>'ı harcandı.</div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:8px">Gider Kırılımı</h3>
+      <div class="brk"><span>Sabit aylık giderler</span><b id="brkFixedBase">₺0</b></div>
+      <div class="brk"><span>Bu dönem taksitleri</span><b id="brkInst">₺0</b></div>
+      <div class="brk"><span>Değişken harcamalar</span><b id="brkVar">₺0</b></div>
+      <div class="brk brk-total"><span>Toplam Gider</span><b id="brkTotal">₺0</b></div>
+    </div>
+
+    <div class="card acc-green" id="balNetCard">
+      <div class="row-between"><b>Aylık net durum</b><b id="balNet2" style="font-size:20px">₺0</b></div>
+      <div class="muted" id="balAdvice" style="margin-top:6px"></div>
+    </div>
+  </section>
+
+  <!-- GİDER EKLE -->
+  <section class="page" id="page-add">
+    <h2 id="addTitle" style="text-align:center;font-size:24px;font-weight:900">İşlem Ekle</h2>
+    <p class="muted" id="addSubtitle" style="text-align:center;margin-bottom:14px">Yeni bir harcama veya gelir kaydedin.</p>
+
+    <div class="seg" id="typeSeg">
+      <button data-type="expense" class="sel">Gider</button>
+      <button data-type="income">Gelir</button>
+    </div>
+
+    <div class="card">
+      <label class="fld" style="margin-top:0">Miktar (₺)</label>
+      <input type="number" id="addAmount" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+      <label class="fld">Açıklama</label>
+      <input type="text" id="addName" placeholder="Örn: Migros, Buzdolabı, Maaş...">
+    </div>
+
+    <div class="card" id="categoryCard">
+      <label class="fld" style="margin-top:0">Kategori</label>
+      <div class="chips" id="catChips"></div>
+    </div>
+
+    <div class="card">
+      <label class="fld" style="margin-top:0">İşlem Tarihi</label>
+      <input type="date" id="addDate">
+    </div>
+
+    <div class="card" id="taksitCard">
+      <div class="row-between">
+        <div>
+          <b>Taksitli Ödeme?</b>
+          <div class="muted">Bu harcamayı aylara bölmek istiyor musunuz?</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="taksitToggle">
+          <span class="slider-tg"></span>
+        </label>
+      </div>
+      <div id="taksitPanel" style="display:none">
+        <div class="row-between" style="margin-top:14px">
+          <b>Taksit Sayısı</b>
+          <b style="color:var(--primary);font-size:18px" id="taksitLabel">3 Ay</b>
+        </div>
+        <input type="range" id="taksitRange" min="2" max="24" value="3">
+        <div class="range-labels"><span>2</span><span>12</span><span>24</span></div>
+        <div class="taksit-preview" id="taksitPreview"></div>
+      </div>
+    </div>
+
+    <button class="btn" id="saveTx">Kaydet</button>
+    <button class="btn" id="cancelEdit" style="display:none;background:#fff;color:var(--text-2);border:1.5px solid #d5d9e4;margin-top:10px">Vazgeç</button>
+  </section>
+
+  <!-- AJANDA -->
+  <section class="page" id="page-history">
+    <h2 style="font-size:22px;font-weight:900;margin-bottom:12px">Ajanda</h2>
+    <input type="text" id="searchBox" placeholder="🔍 İşlem Ara..." style="margin-bottom:12px">
+    <div class="seg" id="histSeg">
+      <button data-g="day" class="sel">Günlük</button>
+      <button data-g="week">Haftalık</button>
+      <button data-g="month">Aylık</button>
+    </div>
+    <div id="historyList"></div>
+  </section>
+
+  <!-- AYARLAR -->
+  <section class="page" id="page-settings">
+    <h2 style="font-size:22px;font-weight:900;margin-bottom:14px">Ayarlar ve Planlama</h2>
+
+    <div class="card">
+      <h3>Hesap Dönemi Başlangıcı</h3>
+      <div class="muted">Aylık bütçe döngünüzün başlayacağı günü seçin.</div>
+      <label class="fld">Başlangıç Günü</label>
+      <select id="startDay"></select>
+    </div>
+
+    <div class="card acc-green">
+      <h3>Sabit Aylık Gelir</h3>
+      <div class="muted">Maaş veya düzenli diğer gelirlerinizi girin.</div>
+      <label class="fld">Aylık Gelir (₺)</label>
+      <input type="number" id="monthlyIncome" inputmode="decimal" min="0" placeholder="0.00">
+    </div>
+
+    <div class="card acc-red">
+      <div class="row-between">
+        <div>
+          <h3>Sabit Aylık Giderler</h3>
+          <div class="muted">Kira, fatura, aidat gibi düzenli ödemeler.</div>
+        </div>
+        <button class="icon-btn" id="addFixed" title="Ekle" style="color:var(--primary);font-size:26px">⊕</button>
+      </div>
+      <div id="fixedList" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card">
+      <div class="row-between">
+        <div>
+          <h3>Giriş Kilidi (Desen)</h3>
+          <div class="muted" id="secDesc">Kapalı — uygulama korumasız açılır.</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="secToggle">
+          <span class="slider-tg"></span>
+        </label>
+      </div>
+      <button class="btn" id="secChange" style="display:none;margin-top:12px;background:#fff;color:var(--primary);border:1.5px solid var(--primary)">Deseni Değiştir</button>
+    </div>
+
+    <div class="card">
+      <h3>Yedekleme</h3>
+      <div class="muted">Verilerin yalnızca bu cihazda tutulur, buluta gönderilmez. Telefon değişirse ya da tarayıcı verileri temizlenirse yedek olmadan geri dönüşü yok — ara sıra yedek al.</div>
+      <div class="muted" id="backupStat" style="margin-top:8px;color:var(--text);font-weight:700"></div>
+      <button class="btn" id="doBackup" style="margin-top:12px">📥 Yedek Al (JSON indir)</button>
+      <button class="btn" id="doRestore" style="margin-top:10px;background:#fff;color:var(--primary);border:1.5px solid var(--primary)">📤 Yedekten Geri Yükle</button>
+      <input type="file" id="restoreFile" accept="application/json,.json" style="display:none">
+      <div class="install-help" style="margin-top:10px">Desen kilidi yedeğe <b>dahil edilmez</b> — her cihazda ayrıca ayarlanır. Geri yükleme mevcut kilidini değiştirmez.</div>
+    </div>
+
+    <div class="card">
+      <h3>Uygulama Kurulumu</h3>
+      <div class="muted" id="installStatus">Kontrol ediliyor…</div>
+      <button class="btn" id="doInstall2" style="display:none;margin-top:12px">📲 Ana Ekrana Kur</button>
+      <div class="install-help" id="installHelp" style="display:none"></div>
+    </div>
+
+    <button class="btn" id="saveSettings">💾 Değişiklikleri Kaydet</button>
+    <button class="btn" id="resetData" style="background:#fff;color:var(--red);border:1.5px solid var(--red);margin-top:10px">Tüm Verileri Sıfırla</button>
+  </section>
+</main>
+
+<nav>
+  <button data-page="home" class="sel"><span class="ico">🏠</span>Ana Sayfa</button>
+  <button data-page="balance"><span class="ico">⚖️</span>Denge</button>
+  <button data-page="add"><span class="ico">➕</span>Ekle</button>
+  <button data-page="history"><span class="ico">📅</span>Ajanda</button>
+  <button data-page="settings"><span class="ico">⚙️</span>Ayarlar</button>
+</nav>
+
+<div id="lockScreen" class="lock">
+  <div class="lock-box">
+    <div class="lock-emoji" id="lockEmoji">🔒</div>
+    <h2 id="lockTitle">Kilitli</h2>
+    <p class="muted" id="lockMsg">Uygulamayı açmak için deseninizi çizin.</p>
+    <svg id="patternPad" class="pad" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="lock-actions" id="lockActions"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ---------- veri katmanı (IndexedDB + localStorage yedeği) ---------- */
+const LS_KEY = "gelirgider_v1";
+const DB_NAME = "gelirgider", DB_VER = 1;
+let idb = null;
+
+const CATS = [
+  {id:"market",  name:"Market",     icon:"🛒"},
+  {id:"yemek",   name:"Yemek",      icon:"🍽️"},
+  {id:"fatura",  name:"Fatura",     icon:"🧾"},
+  {id:"vergi",   name:"Vergi",      icon:"🏛️"},
+  {id:"ulasim",  name:"Ulaşım",     icon:"🚗"},
+  {id:"beyaz",   name:"Beyaz Eşya", icon:"🧊"},
+  {id:"saglik",  name:"Sağlık",     icon:"💊"},
+  {id:"eglence", name:"Eğlence",    icon:"🎬"},
+  {id:"giyim",   name:"Giyim",      icon:"👕"},
+  {id:"diger",   name:"Diğer",      icon:"📦"},
+];
+const catById = id => CATS.find(c=>c.id===id) || CATS[CATS.length-1];
+
+function defaults(){
+  return { settings:{startDay:1, monthlyIncome:0, fixedExpenses:[]},
+           security:{enabled:false, salt:"", hash:"", len:0},
+           transactions:[], rev:0 };
+}
+function normalize(o){
+  o = o || {}; const d = defaults();
+  return {
+    settings: Object.assign(d.settings, o.settings||{}),
+    security: Object.assign(d.security, o.security||{}),
+    transactions: Array.isArray(o.transactions) ? o.transactions : [],
+    rev: (typeof o.rev==="number" ? o.rev : 0)
+  };
+}
+function loadLS(){
+  try{ const raw=localStorage.getItem(LS_KEY); if(raw) return normalize(JSON.parse(raw)); }catch(e){}
+  return normalize(null);
+}
+let state = loadLS();
+
+/* IndexedDB düşük seviye */
+function openDB(){
+  return new Promise(res=>{
+    if(!("indexedDB" in window)) return res(null);
+    let r; try{ r = indexedDB.open(DB_NAME, DB_VER); }catch(e){ return res(null); }
+    r.onupgradeneeded = e=>{
+      const db=e.target.result;
+      if(!db.objectStoreNames.contains("transactions")) db.createObjectStore("transactions",{keyPath:"id"});
+      if(!db.objectStoreNames.contains("meta")) db.createObjectStore("meta",{keyPath:"key"});
+    };
+    r.onsuccess = e=>res(e.target.result);
+    r.onerror = ()=>res(null);
+    r.onblocked = ()=>res(null);
+  });
+}
+function idbGet(store,key){
+  return new Promise(res=>{ try{ const rq=idb.transaction(store,"readonly").objectStore(store).get(key);
+    rq.onsuccess=()=>res(rq.result); rq.onerror=()=>res(undefined); }catch(e){ res(undefined); } });
+}
+function idbGetAll(store){
+  return new Promise(res=>{ try{ const rq=idb.transaction(store,"readonly").objectStore(store).getAll();
+    rq.onsuccess=()=>res(rq.result||[]); rq.onerror=()=>res([]); }catch(e){ res([]); } });
+}
+async function idbLoad(){
+  const s   = await idbGet("meta","settings");
+  const sec = await idbGet("meta","security");
+  const rev = await idbGet("meta","rev");
+  const txs = await idbGetAll("transactions");
+  if(!s && !(txs && txs.length) && !rev) return null;   // IDB boş
+  const st = normalize({ settings: s && s.value, security: sec && sec.value, transactions: txs||[] });
+  st.rev = rev ? rev.value : 0;
+  return st;
+}
+/* Tüm store'ları TEK atomik transaction'da yaz — yarım-commit veri kaybını önler */
+function idbSave(){
+  if(!idb) return Promise.resolve();
+  return new Promise(res=>{
+    let t; try{ t=idb.transaction(["meta","transactions"],"readwrite"); }catch(e){ return res(); }
+    const meta=t.objectStore("meta"), txs=t.objectStore("transactions");
+    meta.put({key:"settings",value:state.settings});
+    meta.put({key:"security",value:state.security});
+    meta.put({key:"rev",value:state.rev});
+    txs.clear();
+    for(const x of state.transactions) txs.put(x);
+    t.oncomplete=res; t.onerror=res; t.onabort=res;
+  });
+}
+let quotaWarned=false;
+function save(){
+  state.rev = (state.rev||0) + 1;   // her yazımda sürümü artır (dayanıklılık için)
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+  catch(e){ if(!quotaWarned){ quotaWarned=true; try{ toast("Yerel depolama dolu — veriler veritabanına yazılıyor."); }catch(_){} } }
+  idbSave();
+}
+
+/* ---------- yardımcılar ---------- */
+const fmt = n => "₺" + (Math.round(n*100)/100).toLocaleString("tr-TR",{minimumFractionDigits:(n%1?2:0),maximumFractionDigits:2});
+const AYLAR = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+function toDate(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
+function iso(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function clampDay(y,m,day){ return Math.min(day, new Date(y,m+1,0).getDate()); }
+
+/* Dönem: startDay'e göre. periodStartFor(date) -> o tarihi kapsayan dönemin başlangıcı */
+function periodStartFor(d){
+  const s = state.settings.startDay;
+  let y=d.getFullYear(), m=d.getMonth();
+  let start = new Date(y,m,clampDay(y,m,s));
+  if(d < start){ m--; if(m<0){m=11;y--;} start = new Date(y,m,clampDay(y,m,s)); }
+  return start;
+}
+function addMonthsToPeriod(start,k){
+  const s = state.settings.startDay;
+  let y=start.getFullYear(), m=start.getMonth()+k;
+  y += Math.floor(m/12); m = ((m%12)+12)%12;
+  return new Date(y,m,clampDay(y,m,s));
+}
+function periodEnd(start){ const n=addMonthsToPeriod(start,1); return new Date(n.getFullYear(),n.getMonth(),n.getDate()-1); }
+function periodIndexDiff(aStart,bStart){
+  return (bStart.getFullYear()-aStart.getFullYear())*12 + (bStart.getMonth()-aStart.getMonth());
+}
+function periodLabel(start){
+  const end = periodEnd(start);
+  if(state.settings.startDay===1) return AYLAR[start.getMonth()]+" "+start.getFullYear();
+  return start.getDate()+" "+AYLAR[start.getMonth()].slice(0,3)+" – "+end.getDate()+" "+AYLAR[end.getMonth()].slice(0,3)+" "+end.getFullYear();
+}
+
+/* Görünen dönem */
+let viewStart = periodStartFor(new Date());
+
+/* Bir dönemdeki taksit ödemeleri: [{tx, no, monthly}] */
+function installmentsInPeriod(pStart){
+  const out=[];
+  for(const tx of state.transactions){
+    if(tx.type!=="expense" || !tx.installments) continue;
+    const firstP = periodStartFor(toDate(tx.date));
+    const k = periodIndexDiff(firstP,pStart);
+    if(k>=0 && k<tx.installments){
+      out.push({tx, no:k+1, monthly: tx.amount/tx.installments});
+    }
+  }
+  return out;
+}
+function txInPeriod(pStart){
+  const end = periodEnd(pStart);
+  return state.transactions.filter(t=>{
+    if(t.installments) return false;
+    const d=toDate(t.date);
+    return d>=pStart && d<=end;
+  });
+}
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),2200);
+}
+
+/* ---------- navigasyon ---------- */
+function goPage(name){
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("sel", x.dataset.page===name));
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById("page-"+name).classList.add("active");
+  window.scrollTo(0,0);
+  if(name==="home") renderHome();
+  if(name==="balance") renderBalance();
+  if(name==="history") renderHistory();
+  if(name==="settings") renderSettings();
+}
+function refreshPeriodView(){
+  const a=document.querySelector(".page.active");
+  if(a && a.id==="page-balance") renderBalance(); else renderHome();
+}
+document.querySelectorAll("nav button").forEach(b=>{
+  b.onclick=()=>{
+    // düzenleme yarıda bırakılırsa formu temizle
+    if(editingId && b.dataset.page!=="add") clearForm();
+    goPage(b.dataset.page);
+  };
+});
+document.getElementById("prevPeriod").onclick=()=>{ viewStart=addMonthsToPeriod(viewStart,-1); refreshPeriodView(); };
+document.getElementById("nextPeriod").onclick=()=>{ viewStart=addMonthsToPeriod(viewStart,1); refreshPeriodView(); };
+
+/* ---------- ANA SAYFA ---------- */
+function renderHome(){
+  document.getElementById("periodTitle").textContent = periodLabel(viewStart);
+  const txs = txInPeriod(viewStart);
+  const inst = installmentsInPeriod(viewStart);
+
+  const extraIncome = txs.filter(t=>t.type==="income").reduce((a,t)=>a+t.amount,0);
+  const income = (state.settings.monthlyIncome||0) + extraIncome;
+  const fixedBase = state.settings.fixedExpenses.reduce((a,f)=>a+(f.amount||0),0);
+  const fixedInst = inst.reduce((a,i)=>a+i.monthly,0);
+  const fixed = fixedBase + fixedInst;
+  const variable = txs.filter(t=>t.type==="expense").reduce((a,t)=>a+t.amount,0);
+  const spent = fixed + variable;
+  const remain = income - spent;
+  const pct = income>0 ? Math.round(spent/income*100) : (spent>0?100:0);
+
+  document.getElementById("homeIncome").textContent = fmt(income);
+  const totalExp = fixedBase + fixedInst + variable;
+  document.getElementById("homeExpTotal").textContent = fmt(totalExp);
+  const pctOf = v => (totalExp>0 ? v/totalExp*100 : 0)+"%";
+  document.getElementById("segFixed").style.width = pctOf(fixedBase);
+  document.getElementById("segInst").style.width  = pctOf(fixedInst);
+  document.getElementById("segVar").style.width   = pctOf(variable);
+  document.getElementById("legFixed").textContent = fmt(fixedBase);
+  document.getElementById("legInst").textContent  = fmt(fixedInst);
+  document.getElementById("legVar").textContent   = fmt(variable);
+
+  // Aylık Sabit Giderler — kalem kalem liste
+  const fxItems = state.settings.fixedExpenses.filter(f=>(f.name&&f.name.trim())||f.amount);
+  document.getElementById("fixedListTotal").textContent = fmt(fixedBase);
+  document.getElementById("homeFixedList").innerHTML = fxItems.length
+    ? fxItems.map(f=>`<div class="mini-row"><span>${esc(f.name||"—")}</span><b>${fmt(f.amount||0)}</b></div>`).join("")
+    : '<div class="empty" style="padding:10px 0">Ayarlar\'dan sabit gider ekleyin (kira, fatura...).</div>';
+
+  // Değişken Harcamalar — kalem kalem liste (bu dönem)
+  const varItems = txs.filter(t=>t.type==="expense").slice().sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById("varListTotal").textContent = fmt(variable);
+  document.getElementById("homeVarList").innerHTML = varItems.length
+    ? varItems.map(t=>{ const c=catById(t.category); const d=toDate(t.date);
+        return `<div class="mini-row"><span>${c.icon} ${esc(t.name)}<span class="mr-date">${d.getDate()} ${AYLAR[d.getMonth()].slice(0,3)}</span></span><b>${fmt(t.amount)}</b></div>`; }).join("")
+    : '<div class="empty" style="padding:10px 0">Bu dönemde değişken harcama yok.</div>';
+
+  const box = document.getElementById("homeInstallments");
+  document.getElementById("taksitCount").textContent = inst.length ? inst.length+" adet" : "";
+  if(!inst.length){ box.innerHTML='<div class="empty">Bu dönemde taksit ödemesi yok.</div>'; return; }
+  box.innerHTML = inst.map(i=>{
+    const c=catById(i.tx.category);
+    return `<div class="list-item">
+      <div class="li-icon">${c.icon}</div>
+      <div class="li-body">
+        <div class="li-title">${esc(i.tx.name||c.name)}</div>
+        <div class="li-sub">${i.no}/${i.tx.installments} Taksit</div>
+      </div>
+      <div class="li-amt neg">${fmt(i.monthly)}</div>
+    </div>`;
+  }).join("");
+}
+function esc(s){ return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+
+/* ---------- EKLE / DÜZENLE ---------- */
+let addType="expense", addCat="market", editingId=null;
+const catChips=document.getElementById("catChips");
+catChips.innerHTML = CATS.map(c=>`<button class="chip${c.id===addCat?' sel':''}" data-c="${c.id}">${c.icon} ${c.name}</button>`).join("");
+catChips.onclick=e=>{
+  const b=e.target.closest(".chip"); if(!b) return;
+  addCat=b.dataset.c;
+  catChips.querySelectorAll(".chip").forEach(x=>x.classList.toggle("sel",x.dataset.c===addCat));
+};
+document.getElementById("typeSeg").onclick=e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  addType=b.dataset.type;
+  document.querySelectorAll("#typeSeg button").forEach(x=>x.classList.toggle("sel",x===b));
+  document.getElementById("categoryCard").style.display = addType==="expense"?"":"none";
+  document.getElementById("taksitCard").style.display = addType==="expense"?"":"none";
+};
+document.getElementById("addDate").value = iso(new Date());
+
+const tgl=document.getElementById("taksitToggle"), rng=document.getElementById("taksitRange");
+tgl.onchange=()=>{ document.getElementById("taksitPanel").style.display = tgl.checked?"":"none"; updTaksit(); };
+rng.oninput=updTaksit;
+document.getElementById("addAmount").oninput=updTaksit;
+function updTaksit(){
+  const n=+rng.value, amt=parseFloat(document.getElementById("addAmount").value)||0;
+  document.getElementById("taksitLabel").textContent = n+" Ay";
+  document.getElementById("taksitPreview").textContent =
+    amt>0 ? `Aylık taksit: ${fmt(amt/n)} × ${n} ay` : "Miktar girince aylık taksit burada görünür.";
+}
+updTaksit();
+
+function setEditUI(on){
+  document.getElementById("addTitle").textContent = on ? "İşlemi Düzenle" : "İşlem Ekle";
+  document.getElementById("addSubtitle").textContent = on
+    ? "Kaydı güncelleyin veya vazgeçin."
+    : "Yeni bir harcama veya gelir kaydedin.";
+  document.getElementById("saveTx").textContent = on ? "Güncelle" : "Kaydet";
+  document.getElementById("cancelEdit").style.display = on ? "" : "none";
+}
+function clearForm(){
+  editingId=null;
+  // tip + kategori varsayılana dönsün (aksi halde gelir düzenlemesinden sonra yeni kayıt gelir olarak kaydedilir)
+  addType="expense"; addCat="market";
+  document.querySelectorAll("#typeSeg button").forEach(x=>x.classList.toggle("sel", x.dataset.type==="expense"));
+  document.getElementById("categoryCard").style.display="";
+  document.getElementById("taksitCard").style.display="";
+  catChips.querySelectorAll(".chip").forEach(x=>x.classList.toggle("sel", x.dataset.c===addCat));
+  document.getElementById("addAmount").value="";
+  document.getElementById("addName").value="";
+  document.getElementById("addDate").value=iso(new Date());
+  tgl.checked=false;
+  document.getElementById("taksitPanel").style.display="none";
+  rng.value=3;
+  updTaksit();
+  setEditUI(false);
+}
+function startEdit(id){
+  const t=state.transactions.find(x=>x.id===id);
+  if(!t) return;
+  editingId=id;
+  addType=t.type;
+  document.querySelectorAll("#typeSeg button").forEach(x=>x.classList.toggle("sel", x.dataset.type===t.type));
+  document.getElementById("categoryCard").style.display = t.type==="expense"?"":"none";
+  document.getElementById("taksitCard").style.display  = t.type==="expense"?"":"none";
+  document.getElementById("addAmount").value=t.amount;
+  document.getElementById("addName").value=t.name;
+  document.getElementById("addDate").value=t.date;
+  if(t.type==="expense"){
+    addCat=t.category;
+    catChips.querySelectorAll(".chip").forEach(x=>x.classList.toggle("sel", x.dataset.c===addCat));
+  }
+  tgl.checked=!!t.installments;
+  document.getElementById("taksitPanel").style.display = t.installments?"":"none";
+  if(t.installments) rng.value=t.installments;
+  updTaksit();
+  setEditUI(true);
+  goPage("add");
+}
+document.getElementById("cancelEdit").onclick=()=>{ clearForm(); goPage("history"); };
+
+document.getElementById("saveTx").onclick=()=>{
+  const amt=parseFloat(document.getElementById("addAmount").value);
+  const name=document.getElementById("addName").value.trim();
+  const date=document.getElementById("addDate").value;
+  if(!amt || amt<=0){ toast("Lütfen geçerli bir miktar girin."); return; }
+  if(!date){ toast("Lütfen tarih seçin."); return; }
+  const data={
+    type: addType,
+    name: name || (addType==="income" ? "Gelir" : catById(addCat).name),
+    category: addType==="expense" ? addCat : "gelir",
+    amount: amt,
+    date: date,
+    installments: (addType==="expense" && tgl.checked) ? +rng.value : null
+  };
+  if(editingId){
+    const t=state.transactions.find(x=>x.id===editingId);
+    if(!t){ toast("Kayıt bulunamadı."); clearForm(); return; }
+    Object.assign(t,data); save();
+    clearForm();
+    toast("Güncellendi ✓");
+    goPage("history");
+  }else{
+    data.id = Date.now()+"-"+Math.random().toString(36).slice(2,7);
+    state.transactions.push(data); save();
+    clearForm();
+    toast(data.installments ? `Kaydedildi: ${data.installments} taksit, aylık ${fmt(amt/data.installments)}` : "Kaydedildi ✓");
+    viewStart = periodStartFor(toDate(date));
+    renderHome();
+  }
+};
+
+/* ---------- GEÇMİŞ ---------- */
+let histGroup="day";
+document.getElementById("histSeg").onclick=e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  histGroup=b.dataset.g;
+  document.querySelectorAll("#histSeg button").forEach(x=>x.classList.toggle("sel",x===b));
+  renderHistory();
+};
+document.getElementById("searchBox").oninput=renderHistory;
+
+function groupKey(d){
+  if(histGroup==="day") return iso(d);
+  if(histGroup==="month"){ const p=periodStartFor(d); return iso(p); }
+  const wd=(d.getDay()+6)%7; const mon=new Date(d); mon.setDate(d.getDate()-wd); return iso(mon);
+}
+function groupTitle(key){
+  const d=toDate(key), today=new Date(); today.setHours(0,0,0,0);
+  if(histGroup==="day"){
+    const diff=Math.round((today-d)/86400000);
+    if(diff===0) return "Bugün";
+    if(diff===1) return "Dün";
+    return d.getDate()+" "+AYLAR[d.getMonth()]+" "+d.getFullYear();
+  }
+  if(histGroup==="month") return periodLabel(d);
+  const end=new Date(d); end.setDate(d.getDate()+6);
+  return d.getDate()+" "+AYLAR[d.getMonth()].slice(0,3)+" – "+end.getDate()+" "+AYLAR[end.getMonth()].slice(0,3);
+}
+function renderHistory(){
+  const q=document.getElementById("searchBox").value.trim().toLocaleLowerCase("tr");
+  const list=document.getElementById("historyList");
+  let txs=[...state.transactions].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id));
+  if(q) txs=txs.filter(t=>(t.name+" "+catById(t.category).name).toLocaleLowerCase("tr").includes(q));
+  if(!txs.length){ list.innerHTML='<div class="empty">Kayıt bulunamadı. ➕ Ekle sekmesinden ilk işleminizi girin.</div>'; return; }
+
+  const groups=new Map();
+  for(const t of txs){
+    const k=groupKey(toDate(t.date));
+    if(!groups.has(k)) groups.set(k,[]);
+    groups.get(k).push(t);
+  }
+  let html="";
+  for(const [k,items] of [...groups.entries()].sort((a,b)=>b[0].localeCompare(a[0]))){
+    const tot=items.reduce((a,t)=>a+(t.type==="income"?t.amount:-t.amount),0);
+    html+=`<div class="group-title row-between"><span>${groupTitle(k)}</span>
+      <span style="font-size:14px;color:${tot>=0?'var(--green)':'var(--red)'}">${tot>=0?'+':''}${fmt(Math.abs(tot))}</span></div>`;
+    html+=`<div class="card" style="padding:8px 14px">`+items.map(t=>{
+      const c = t.type==="income" ? {icon:"💼",name:"Gelir"} : catById(t.category);
+      const sub = t.installments ? `${c.name} • ${t.installments} Taksit` : c.name;
+      const amtTxt = t.type==="income" ? "+"+fmt(t.amount) : "-"+fmt(t.amount);
+      return `<div class="list-item">
+        <div class="li-icon">${c.icon}</div>
+        <div class="li-body">
+          <div class="li-title">${esc(t.name)}</div>
+          <div class="li-sub">${sub} • ${toDate(t.date).getDate()} ${AYLAR[toDate(t.date).getMonth()].slice(0,3)}</div>
+        </div>
+        <div class="li-amt ${t.type==="income"?"pos":"neg"}">${amtTxt}</div>
+        <button class="li-edit" data-edit="${t.id}" title="Düzenle">✏️</button>
+        <button class="li-del" data-del="${t.id}" title="Sil">🗑</button>
+      </div>`;
+    }).join("")+`</div>`;
+  }
+  list.innerHTML=html;
+  list.querySelectorAll("[data-del]").forEach(b=>{
+    b.onclick=()=>{
+      if(!confirm("Bu kaydı silmek istiyor musunuz?")) return;
+      state.transactions=state.transactions.filter(t=>t.id!==b.dataset.del);
+      save(); renderHistory(); toast("Kayıt silindi");
+    };
+  });
+  list.querySelectorAll("[data-edit]").forEach(b=>{
+    b.onclick=()=>startEdit(b.dataset.edit);
+  });
+}
+
+/* ---------- AYARLAR ---------- */
+const sdSel=document.getElementById("startDay");
+sdSel.innerHTML=Array.from({length:28},(_,i)=>`<option value="${i+1}">Her ayın ${i+1}'i</option>`).join("");
+function renderSettings(){
+  sdSel.value=state.settings.startDay;
+  document.getElementById("monthlyIncome").value=state.settings.monthlyIncome||"";
+  renderFixedList();
+  renderSecurity();
+  renderBackupStat();
+}
+function renderFixedList(){
+  const box=document.getElementById("fixedList");
+  if(!state.settings.fixedExpenses.length){
+    box.innerHTML='<div class="empty">Henüz sabit gider yok. ⊕ ile ekleyin (kira, fatura, aidat...).</div>'; return;
+  }
+  box.innerHTML=state.settings.fixedExpenses.map((f,i)=>`
+    <div class="fixed-row">
+      <input type="text" class="fx-name" data-i="${i}" value="${esc(f.name)}" placeholder="Örn: Kira">
+      <input type="number" class="fx-amt" data-i="${i}" value="${f.amount||""}" placeholder="Miktar (₺)" inputmode="decimal">
+      <button class="icon-btn" data-rm="${i}" title="Sil">🗑️</button>
+    </div>`).join("");
+  box.querySelectorAll(".fx-name").forEach(el=>el.oninput=()=>{state.settings.fixedExpenses[+el.dataset.i].name=el.value;});
+  box.querySelectorAll(".fx-amt").forEach(el=>el.oninput=()=>{state.settings.fixedExpenses[+el.dataset.i].amount=parseFloat(el.value)||0;});
+  box.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{
+    state.settings.fixedExpenses.splice(+b.dataset.rm,1); renderFixedList();
+  });
+}
+document.getElementById("addFixed").onclick=()=>{
+  state.settings.fixedExpenses.push({name:"",amount:0});
+  renderFixedList();
+  const inputs=document.querySelectorAll("#fixedList .fx-name");
+  inputs[inputs.length-1].focus();
+};
+document.getElementById("saveSettings").onclick=()=>{
+  state.settings.startDay=+sdSel.value;
+  state.settings.monthlyIncome=parseFloat(document.getElementById("monthlyIncome").value)||0;
+  state.settings.fixedExpenses=state.settings.fixedExpenses.filter(f=>f.name.trim()||f.amount);
+  save();
+  viewStart=periodStartFor(new Date());
+  toast("Ayarlar kaydedildi ✓");
+  renderFixedList();
+};
+document.getElementById("resetData").onclick=async ()=>{
+  if(!confirm("TÜM veriler (işlemler, ayarlar ve kilit) silinecek. Emin misiniz?")) return;
+  try{ localStorage.removeItem(LS_KEY); }catch(e){}
+  if(idb){ try{ await new Promise(r=>{ const t=idb.transaction(["transactions","meta"],"readwrite");
+    t.objectStore("transactions").clear(); t.objectStore("meta").clear();
+    t.oncomplete=r; t.onerror=r; t.onabort=r; }); }catch(e){} }
+  state=normalize(null); viewStart=periodStartFor(new Date());
+  toast("Tüm veriler sıfırlandı");
+  renderSettings(); renderHome();
+};
+
+/* ---------- YEDEKLEME (JSON dışa/içe aktarma) ---------- */
+/* Gelen dosya bozuk/yabancı olabilir: her alanı tek tek doğrula, uygulamayı bozacak veri geçirme. */
+function sanitizeSettings(s){
+  s = (s && typeof s==="object") ? s : {};
+  let sd = Math.round(Number(s.startDay));  if(!(sd>=1 && sd<=28)) sd=1;
+  let mi = Number(s.monthlyIncome);         if(!isFinite(mi) || mi<0) mi=0;
+  const fx = (Array.isArray(s.fixedExpenses)?s.fixedExpenses:[]).map(f=>({
+    name  : String((f && f.name) || "").slice(0,80),
+    amount: (f && isFinite(Number(f.amount)) && Number(f.amount)>=0) ? Number(f.amount) : 0
+  })).filter(f=>f.name.trim() || f.amount).slice(0,300);
+  return { startDay:sd, monthlyIncome:mi, fixedExpenses:fx };
+}
+function sanitizeTx(arr){
+  const out=[], seen=new Set();
+  for(const t of (Array.isArray(arr)?arr:[])){
+    if(!t || typeof t!=="object") continue;
+    const amount = Number(t.amount);
+    const date   = String(t.date||"");
+    if(!isFinite(amount) || amount<=0) continue;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+    if(isNaN(toDate(date).getTime())) continue;
+    let id = String(t.id||"");
+    if(!id || seen.has(id)) id = Date.now()+"-"+Math.random().toString(36).slice(2,7);
+    seen.add(id);
+    const type = (t.type==="income") ? "income" : "expense";
+    let inst = (t.installments==null) ? null : Math.round(Number(t.installments));
+    if(!(inst>=2 && inst<=600)) inst=null;
+    out.push({
+      id, type,
+      name: String(t.name||"").slice(0,120) || (type==="income"?"Gelir":"Harcama"),
+      category: String(t.category || (type==="income"?"gelir":"diger")).slice(0,40),
+      amount, date,
+      installments: (type==="expense") ? inst : null
+    });
+  }
+  return out;
+}
+function renderBackupStat(){
+  const el=document.getElementById("backupStat"); if(!el) return;
+  const n=state.transactions.length;
+  const f=state.settings.fixedExpenses.filter(x=>(x.name&&x.name.trim())||x.amount).length;
+  el.textContent = `Şu an cihazda: ${n} işlem, ${f} sabit gider kalemi.`;
+}
+document.getElementById("doBackup").onclick=()=>{
+  try{
+    const payload={ uygulama:"gelirgider", surum:1, tarih:new Date().toISOString(),
+                    settings:state.settings, transactions:state.transactions };
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const d=new Date();
+    const ad="gelirgider-yedek-"+d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0")+".json";
+    const a=document.createElement("a");
+    a.href=url; a.download=ad; a.style.display="none";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),3000);
+    toast(`Yedek indirildi: ${state.transactions.length} işlem ✓`);
+  }catch(e){ toast("Yedek alınamadı: "+(e&&e.message||e)); }
+};
+document.getElementById("doRestore").onclick=()=>document.getElementById("restoreFile").click();
+document.getElementById("restoreFile").onchange=async e=>{
+  const inp=e.target, f=inp.files && inp.files[0];
+  inp.value="";                                   // aynı dosya tekrar seçilebilsin
+  if(!f) return;
+  let obj=null;
+  try{
+    const metin = f.text ? await f.text()
+      : await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsText(f); });
+    obj = JSON.parse(metin);
+  }catch(_){ toast("Dosya okunamadı — geçerli bir JSON yedeği seçin."); return; }
+  if(!obj || typeof obj!=="object" || (!Array.isArray(obj.transactions) && !obj.settings)){
+    toast("Bu dosya bir Gelir Gider yedeği değil."); return;
+  }
+  const yeniAyar = sanitizeSettings(obj.settings);
+  const yeniTx   = sanitizeTx(obj.transactions);
+  const atilan   = (Array.isArray(obj.transactions)?obj.transactions.length:0) - yeniTx.length;
+  if(!yeniTx.length && !yeniAyar.fixedExpenses.length && !yeniAyar.monthlyIncome){
+    toast("Yedek boş görünüyor — geri yükleme yapılmadı."); return;
+  }
+  const uyari = `Yedek içeriği:\n• ${yeniTx.length} işlem\n• ${yeniAyar.fixedExpenses.length} sabit gider`
+    + (atilan>0 ? `\n• (${atilan} bozuk kayıt atlandı)` : "")
+    + `\n\nŞu anki ${state.transactions.length} işlem SİLİNECEK ve yerine bunlar yazılacak.`
+    + `\nDesen kilidin değişmeyecek.\n\nDevam edilsin mi?`;
+  if(!confirm(uyari)) return;
+  state = { settings:yeniAyar, security:state.security, transactions:yeniTx, rev:(state.rev||0) };
+  save();                                          // save() rev'i artırır → iki depo da tutarlı
+  viewStart = periodStartFor(new Date());
+  toast(`Geri yüklendi: ${yeniTx.length} işlem ✓`);
+  renderSettings(); renderHome();
+};
+
+/* ---------- DENGE ---------- */
+function renderBalance(){
+  document.getElementById("periodTitle").textContent = periodLabel(viewStart);
+  document.getElementById("balPeriod").textContent = periodLabel(viewStart)+" dönemi";
+  const txs = txInPeriod(viewStart);
+  const inst = installmentsInPeriod(viewStart);
+  const extraIncome = txs.filter(t=>t.type==="income").reduce((a,t)=>a+t.amount,0);
+  const income = (state.settings.monthlyIncome||0) + extraIncome;
+  const fixedBase = state.settings.fixedExpenses.reduce((a,f)=>a+(f.amount||0),0);
+  const instSum = inst.reduce((a,i)=>a+i.monthly,0);
+  const variable = txs.filter(t=>t.type==="expense").reduce((a,t)=>a+t.amount,0);
+  const totalExp = fixedBase + instSum + variable;
+  const net = income - totalExp;
+  const pct = income>0 ? Math.round(totalExp/income*100) : (totalExp>0?100:0);
+
+  document.getElementById("balIncome").textContent = fmt(income);
+  document.getElementById("balExpense").textContent = fmt(totalExp);
+  const netEl=document.getElementById("balNet");
+  netEl.textContent = fmt(net);
+  netEl.className = net>=0 ? "pos" : "neg2";
+  document.getElementById("balNetLabel").textContent = net>=0 ? "Kalan" : "Açık";
+  document.getElementById("balNet2").textContent = fmt(net);
+
+  const inc=document.getElementById("cmpInc");
+  inc.style.width = Math.min(pct,100)+"%";
+  inc.style.background = pct>100 ? "var(--red)" : (pct>85 ? "#e8912a" : "var(--primary)");
+  document.getElementById("cmpPct").textContent = "%"+pct;
+
+  document.getElementById("brkFixedBase").textContent = fmt(fixedBase);
+  document.getElementById("brkInst").textContent = fmt(instSum);
+  document.getElementById("brkVar").textContent = fmt(variable);
+  document.getElementById("brkTotal").textContent = fmt(totalExp);
+
+  const card=document.getElementById("balNetCard");
+  card.classList.toggle("acc-green", net>=0);
+  card.classList.toggle("acc-red", net<0);
+  const adv=document.getElementById("balAdvice");
+  if(income<=0) adv.textContent = "Gelir girilmemiş. Ayarlar'dan aylık gelirini ekleyerek dengeyi görebilirsin.";
+  else if(net<0) adv.textContent = "Bu dönem gelirinden fazla harcama var. Değişken harcamaları gözden geçir.";
+  else if(pct>85) adv.textContent = "Gelirinin çoğunu harcadın, dikkatli ol.";
+  else adv.textContent = "Bütçen dengede görünüyor 👍";
+}
+
+/* ---------- GÜVENLİK: desen kilidi ---------- */
+async function sha256Hex(str){
+  try{
+    if(window.crypto && crypto.subtle){
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+      return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+    }
+  }catch(e){}
+  let h=0x811c9dc5>>>0;
+  for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0; }
+  return "fnv"+h.toString(16);
+}
+function randHex(n){
+  const a=new Uint8Array(n);
+  if(window.crypto && crypto.getRandomValues) crypto.getRandomValues(a);
+  else for(let i=0;i<n;i++) a[i]=Math.floor(Math.random()*256);
+  return [...a].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+function patternHash(seq,salt){ return sha256Hex("gg:"+salt+":"+seq.join("-")); }
+
+/* desen padi */
+const pad=document.getElementById("patternPad");
+const padDots=[]; let padSeq=[], padDrawing=false;
+(function buildPad(){
+  const NS="http://www.w3.org/2000/svg";
+  pad.setAttribute("role","application");
+  pad.setAttribute("aria-label","Desen kilidi: 3'e 3 nokta ızgarasında parmağınızla deseninizi çizin");
+  const line=document.createElementNS(NS,"polyline");
+  line.setAttribute("id","padLines"); line.setAttribute("fill","none");
+  line.setAttribute("stroke","#005bbf"); line.setAttribute("stroke-width","6");
+  line.setAttribute("stroke-linecap","round"); line.setAttribute("stroke-linejoin","round");
+  pad.appendChild(line);
+  for(let i=0;i<9;i++){
+    const r=Math.floor(i/3), c=i%3, cx=50+c*100, cy=50+r*100;
+    const halo=document.createElementNS(NS,"circle");
+    halo.setAttribute("cx",cx); halo.setAttribute("cy",cy); halo.setAttribute("r",26); halo.setAttribute("fill","#e8eef8");
+    const dot=document.createElementNS(NS,"circle");
+    dot.setAttribute("cx",cx); dot.setAttribute("cy",cy); dot.setAttribute("r",9); dot.setAttribute("fill","#9aa3b2");
+    pad.appendChild(halo); pad.appendChild(dot);
+    padDots.push({i,cx,cy,dot,halo});
+  }
+})();
+function padPoint(e){ const r=pad.getBoundingClientRect();
+  return { x:(e.clientX-r.left)/r.width*300, y:(e.clientY-r.top)/r.height*300 }; }
+function dotAt(x,y){ for(const d of padDots){ const dx=x-d.cx, dy=y-d.cy; if(dx*dx+dy*dy<=900) return d; } return null; }
+function between(a,b){ const r1=(a/3|0),c1=a%3,r2=(b/3|0),c2=b%3, mr=(r1+r2)/2, mc=(c1+c2)/2;
+  if(Number.isInteger(mr)&&Number.isInteger(mc)) return mr*3+mc; return null; }
+function padAdd(i){
+  if(padSeq.includes(i)) return;
+  if(padSeq.length){ const mid=between(padSeq[padSeq.length-1], i); if(mid!=null && !padSeq.includes(mid)) padSeq.push(mid); }
+  padSeq.push(i); drawPad(null);
+}
+function drawPad(live){
+  let pts=padSeq.map(i=>padDots[i].cx+","+padDots[i].cy).join(" ");
+  if(live && padSeq.length) pts+=" "+live.x+","+live.y;
+  document.getElementById("padLines").setAttribute("points",pts);
+  padDots.forEach(d=>{ const on=padSeq.includes(d.i);
+    d.dot.setAttribute("fill", on?"#005bbf":"#9aa3b2");
+    d.halo.setAttribute("fill", on?"#cfe0fb":"#e8eef8"); });
+}
+function clearPad(){ padSeq=[]; drawPad(null); }
+pad.addEventListener("pointerdown",e=>{ e.preventDefault(); padDrawing=true; padSeq=[];
+  const p=padPoint(e), d=dotAt(p.x,p.y); if(d)padAdd(d.i); try{pad.setPointerCapture(e.pointerId);}catch(_){} });
+pad.addEventListener("pointermove",e=>{ if(!padDrawing)return; const p=padPoint(e), d=dotAt(p.x,p.y); if(d)padAdd(d.i); drawPad(p); });
+function padFinish(){ if(!padDrawing)return; padDrawing=false; drawPad(null); onPadDone(padSeq.slice()); }
+pad.addEventListener("pointerup",padFinish);
+pad.addEventListener("pointercancel",padFinish);
+
+/* kilit kontrolü */
+let lockMode="unlock", firstSeq=null;
+function lockOpen(mode){ firstSeq=null; document.getElementById("lockScreen").classList.add("show"); setLockMode(mode); }
+function lockHide(){ document.getElementById("lockScreen").classList.remove("show"); }
+function setLockMode(mode){
+  lockMode=mode;
+  const T=document.getElementById("lockTitle"), M=document.getElementById("lockMsg"),
+        A=document.getElementById("lockActions"), E=document.getElementById("lockEmoji");
+  M.style.color="var(--text-2)"; A.innerHTML="";
+  if(mode==="unlock"){ E.textContent="🔒"; T.textContent="Kilitli"; M.textContent="Uygulamayı açmak için deseninizi çizin."; }
+  else if(mode==="set1"){ E.textContent="✏️"; T.textContent="Yeni desen çizin"; M.textContent="En az 4 noktayı birleştirin."; addCancel(A); }
+  else if(mode==="set2"){ E.textContent="✅"; T.textContent="Deseni onayla"; M.textContent="Aynı deseni tekrar çizin."; addCancel(A); }
+  else if(mode==="disable"){ E.textContent="🔓"; T.textContent="Kilidi kaldır"; M.textContent="Kaldırmak için mevcut deseninizi çizin."; addCancel(A); }
+  else if(mode==="change"){ E.textContent="🔑"; T.textContent="Mevcut deseni çiz"; M.textContent="Değiştirmek için önce mevcut deseninizi çizin."; addCancel(A); }
+  clearPad();
+}
+function addCancel(A){
+  const b=document.createElement("button"); b.className="btn";
+  b.style.cssText="background:#fff;color:var(--text-2);border:1.5px solid #d5d9e4";
+  b.textContent="Vazgeç";
+  b.onclick=()=>{ lockHide(); goPage("settings"); };
+  A.appendChild(b);
+}
+function lockError(msg){
+  const M=document.getElementById("lockMsg"); M.textContent=msg; M.style.color="var(--red)";
+  const box=document.querySelector(".lock-box"); box.classList.remove("shake"); void box.offsetWidth; box.classList.add("shake");
+  setTimeout(clearPad,450);
+}
+async function onPadDone(seq){
+  if(!seq.length) return;
+  if(lockMode==="change"){
+    const h=await patternHash(seq, state.security.salt);
+    if(h===state.security.hash) setLockMode("set1");
+    else lockError("Desen hatalı, tekrar deneyin.");
+    return;
+  }
+  if(lockMode==="unlock" || lockMode==="disable"){
+    const h=await patternHash(seq, state.security.salt);
+    if(h===state.security.hash){
+      if(lockMode==="disable"){ state.security={enabled:false,salt:"",hash:"",len:0}; save(); lockHide(); goPage("settings"); toast("Kilit kaldırıldı"); }
+      else { lockHide(); goPage("home"); setInstallUI(); }
+    } else lockError("Desen hatalı, tekrar deneyin.");
+  } else if(lockMode==="set1"){
+    if(seq.length<4){ lockError("En az 4 nokta bağlayın."); return; }
+    firstSeq=seq; setTimeout(()=>setLockMode("set2"),200);
+  } else if(lockMode==="set2"){
+    if(!firstSeq || seq.join("-")!==firstSeq.join("-")){ lockError("Desenler eşleşmedi, baştan çizin."); setTimeout(()=>setLockMode("set1"),700); return; }
+    const salt=randHex(16), hash=await patternHash(seq,salt);
+    state.security={enabled:true, salt, hash, len:seq.length}; save();
+    lockHide(); goPage("settings"); toast("Desen kilidi kuruldu ✓");
+  }
+}
+function renderSecurity(){
+  const on=state.security.enabled;
+  const tg=document.getElementById("secToggle"); if(tg) tg.checked=on;
+  const d=document.getElementById("secDesc"); if(d) d.textContent = on ? "Açık — uygulama her açılışta desen ister." : "Kapalı — uygulama korumasız açılır.";
+  const ch=document.getElementById("secChange"); if(ch) ch.style.display = on ? "" : "none";
+}
+document.getElementById("secToggle").onchange=e=>{
+  if(e.target.checked && !state.security.enabled){ e.target.checked=false; lockOpen("set1"); }
+  else if(!e.target.checked && state.security.enabled){ e.target.checked=true; lockOpen("disable"); }
+};
+document.getElementById("secChange").onclick=()=>lockOpen("change");
+
+/* arka plana geçince örtü koy (OS görev-değiştirici sızıntısını önle), dönünce 15sn+ ise deseni iste */
+let bgAt=0, coverAdded=false;
+function lockShown(){ return document.getElementById("lockScreen").classList.contains("show"); }
+document.addEventListener("visibilitychange",()=>{
+  if(!state.security || !state.security.enabled) return;
+  if(document.hidden){
+    bgAt=Date.now();
+    if(!lockShown()){ coverAdded=true; lockOpen("unlock"); }   // içeriği anında ört
+  }else{
+    if(Date.now()-bgAt>15000){ coverAdded=false; if(!lockShown()) lockOpen("unlock"); } // gerçek kilit; desen gerekir
+    else if(coverAdded){ coverAdded=false; lockHide(); }        // kısa geçiş: örtüyü kaldır
+  }
+});
+
+/* Sekmeler arası senkron: başka sekme yazınca en güncel veriyi al ve yeniden çiz */
+window.addEventListener("storage", async e=>{
+  if(e.key!==LS_KEY || !e.newValue) return;
+  let incoming=null;
+  try{ incoming=normalize(JSON.parse(e.newValue)); }catch(_){}
+  if(idb){ const f=await idbLoad(); if(f && (!incoming || (f.rev||0)>=(incoming.rev||0))) incoming=f; }
+  if(!incoming || (incoming.rev||0) < (state.rev||0)) return;
+  state=incoming;
+  const a=document.querySelector(".page.active");
+  if(!a) return;
+  if(a.id==="page-home") renderHome();
+  else if(a.id==="page-balance") renderBalance();
+  else if(a.id==="page-history") renderHistory();
+  else if(a.id==="page-settings") renderSettings();
+});
+
+/* ---------- açılış akışı ---------- */
+function revealApp(){
+  lockHide();
+  const wantAdd = new URLSearchParams(location.search).get("ekle")==="1";
+  goPage(wantAdd ? "add" : "home");
+  setInstallUI();
+}
+async function boot(){
+  const ls = state;   // loadLS() ile yüklenen (localStorage) durum
+  idb = await openDB();
+  if(idb){
+    const fromIDB = await idbLoad();
+    if(fromIDB && (fromIDB.rev||0) >= (ls.rev||0)){
+      state = fromIDB;          // IDB en az localStorage kadar güncel → onu kullan
+    }else{
+      state = ls;               // localStorage daha güncel (veya IDB boş) → onu koru
+      await idbSave();          // IDB'yi localStorage'tan tazele / ilk migrasyon
+    }
+  }
+  viewStart = periodStartFor(new Date());
+  if(state.security && state.security.enabled) lockOpen("unlock");
+  else revealApp();
+}
+
+/* ---------- PWA: kurulum, service worker, güncelleme ---------- */
+let deferredPrompt = null;
+const isStandalone = () =>
+  window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+
+function setInstallUI(){
+  const bar = document.getElementById("installBar");
+  const status = document.getElementById("installStatus");
+  const btn2 = document.getElementById("doInstall2");
+  const help = document.getElementById("installHelp");
+  const dismissed = localStorage.getItem("gg_install_dismissed")==="1";
+
+  if(isStandalone()){
+    bar.classList.remove("show");
+    status.textContent = "✅ Uygulama kurulu ve şu anda kurulu sürümden çalışıyor.";
+    btn2.style.display="none"; help.style.display="none";
+    return;
+  }
+  if(deferredPrompt){
+    if(!dismissed) bar.classList.add("show");
+    status.textContent = "Uygulama bu cihaza kurulabilir.";
+    btn2.style.display=""; help.style.display="none";
+    return;
+  }
+  bar.classList.remove("show");
+  btn2.style.display="none";
+  if(location.protocol==="file:"){
+    status.textContent = "⚠️ Kurulum için uygulamanın bir web adresinden (https://) açılması gerekir.";
+    help.style.display="";
+    help.innerHTML = "Dosyaya çift tıklayarak açtığınızda (<b>file://</b>) tarayıcılar güvenlik nedeniyle kuruluma izin vermez. Klasörü bir web adresine yükleyip telefondan o adresi açmanız gerekir.";
+  }else{
+    status.textContent = "Kurulum seçeneği tarayıcı menüsünden yapılabilir.";
+    help.style.display="";
+    help.innerHTML = "<b>Android / Chrome:</b> sağ üstteki ⋮ menüsünden <b>“Uygulamayı yükle”</b> veya <b>“Ana ekrana ekle”</b>.<br><b>iPhone / Safari:</b> alttaki paylaş ⬆️ simgesinden <b>“Ana Ekrana Ekle”</b>.";
+  }
+}
+
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  setInstallUI();
+});
+
+async function runInstall(){
+  if(!deferredPrompt){ toast("Kurulum için tarayıcı menüsünü kullanın."); return; }
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  toast(outcome==="accepted" ? "Kuruluyor…" : "Kurulum iptal edildi");
+  setInstallUI();
+}
+document.getElementById("doInstall").onclick = runInstall;
+document.getElementById("doInstall2").onclick = runInstall;
+document.getElementById("dismissInstall").onclick = ()=>{
+  localStorage.setItem("gg_install_dismissed","1");
+  document.getElementById("installBar").classList.remove("show");
+};
+window.addEventListener("appinstalled", ()=>{
+  deferredPrompt=null;
+  toast("Uygulama ana ekrana eklendi ✓");
+  setInstallUI();
+});
+
+/* Verinin tarayıcı tarafından silinmemesi için kalıcı depolama iste */
+if(navigator.storage && navigator.storage.persist){
+  navigator.storage.persisted().then(p => { if(!p) navigator.storage.persist(); });
+}
+
+/* Service worker */
+if("serviceWorker" in navigator && location.protocol!=="file:"){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("sw.js").then(reg=>{
+      reg.addEventListener("updatefound", ()=>{
+        const nw = reg.installing;
+        if(!nw) return;
+        nw.addEventListener("statechange", ()=>{
+          if(nw.state==="installed" && navigator.serviceWorker.controller){
+            document.getElementById("updateBar").classList.add("show");
+            document.getElementById("doUpdate").onclick = ()=>{
+              nw.postMessage("SKIP_WAITING");
+              reg.waiting && reg.waiting.postMessage("SKIP_WAITING");
+            };
+          }
+        });
+      });
+    }).catch(()=>{});
+    let reloaded=false;
+    navigator.serviceWorker.addEventListener("controllerchange", ()=>{
+      if(reloaded) return; reloaded=true; location.reload();
+    });
+  });
+}
+
+/* ---------- ilk açılış ---------- */
+boot();
+</script>
+</body>
+</html>

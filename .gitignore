@@ -1,0 +1,20 @@
+# Tasarım kaynakları — deploy'a ve depoya gitmez
+tasarim/
+
+# Dağıtım paketleri
+*.zip
+
+# Yerel yedek dosyaları (kişisel finans verisi — asla depoya girmesin)
+gelirgider-yedek-*.json
+
+# Editör / sistem
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Geçici
+*.log
+*.tmp
+.vercel
