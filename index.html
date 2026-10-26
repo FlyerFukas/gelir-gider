@@ -906,6 +906,7 @@ document.getElementById("saveTx").onclick=()=>{
     if(!t){ toast("Kayıt bulunamadı."); clearForm(); return; }
     if(addType!=="transfer") delete t.yon;
     if(addType!=="expense") delete t.iade;
+    if(t.extId) data.elle = true;
     Object.assign(t,data); save();
     clearForm();
     toast("Güncellendi ✓");
@@ -1090,6 +1091,7 @@ function sanitizeTx(arr){
     if(t.extId)   x.extId   = String(t.extId).slice(0,40);
     if(t.hesap)   x.hesap   = String(t.hesap).slice(0,40);
     if(t.aktarim) x.aktarim = String(t.aktarim).slice(0,40);
+    if(t.elle===true) x.elle = true;   // ekstreden gelip uygulamada düzenlendi: yeniden aktarım ezmez
     out.push(x);
   }
   return out;
@@ -1174,21 +1176,31 @@ document.getElementById("importFile").onchange=async e=>{
     return;
   }
   const gelen = sanitizeTx(obj.islemler.filter(t=>t && t.extId));
-  const var_ = new Set(state.transactions.filter(t=>t.extId).map(t=>t.extId));
-  const yeni = gelen.filter(t=>!var_.has(t.extId));
-  const atlanan = gelen.length - yeni.length;
-  if(!yeni.length){ toast(`Yeni işlem yok: ${atlanan} işlemin hepsi zaten eklenmiş.`); return; }
+  const mevcut = new Map(state.transactions.filter(t=>t.extId).map(t=>[t.extId,t]));
+  const yeni = gelen.filter(t=>!mevcut.has(t.extId));
+  // Motorda kategorisi düzeltilmiş kayıtlar güncellenir; uygulamada elle düzenlenenlere dokunulmaz.
+  const ALAN = ["type","category","name","amount","date","yon","iade"];
+  const degisen = gelen.filter(t=>{ const m=mevcut.get(t.extId);
+    return m && !m.elle && ALAN.some(k=>(m[k]??null)!==(t[k]??null)); });
+  const ayni = gelen.length - yeni.length - degisen.length;
+  if(!yeni.length && !degisen.length){ toast(`Değişiklik yok: ${ayni} işlemin hepsi zaten güncel.`); return; }
   const say = tip => yeni.filter(t=>t.type===tip).length;
-  const tarihler = yeni.map(t=>t.date).sort();
   const gun = s => { const d=toDate(s); return d.getDate()+" "+AYLAR[d.getMonth()]+" "+d.getFullYear(); };
-  let mesaj = `${yeni.length} yeni işlem eklenecek (${gun(tarihler[0])} – ${gun(tarihler[tarihler.length-1])}):\n`
-    + `• ${say("expense")} gider\n• ${say("income")} gelir\n• ${say("transfer")} birikim/yatırım hareketi`
-    + (atlanan ? `\n\n${atlanan} işlem zaten ekli olduğu için atlanacak.` : "")
-    + `\n\nMevcut kayıtların silinmez. Aynı harcamayı elle de girdiysen iki kez görünür.\nDevam edilsin mi?`;
+  let mesaj = "";
+  if(yeni.length){
+    const tarihler = yeni.map(t=>t.date).sort();
+    mesaj += `${yeni.length} yeni işlem eklenecek (${gun(tarihler[0])} – ${gun(tarihler[tarihler.length-1])}):\n`
+      + `• ${say("expense")} gider\n• ${say("income")} gelir\n• ${say("transfer")} birikim/yatırım hareketi\n\n`;
+  }
+  if(degisen.length) mesaj += `${degisen.length} işlemin kategorisi ya da bilgisi güncellenecek.\n\n`;
+  mesaj += (ayni ? `${ayni} işlem zaten güncel, dokunulmayacak.\n` : "")
+    + `Elle girdiğin ve uygulamada düzenlediğin kayıtlar değişmez.\nDevam edilsin mi?`;
   if(!confirm(mesaj)) return;
+  for(const t of degisen){ const m=mevcut.get(t.extId);
+    for(const k of ALAN){ if(t[k]===undefined) delete m[k]; else m[k]=t[k]; } }
   const id = "akt-"+Date.now();
   for(const t of yeni){ t.aktarim=id; state.transactions.push(t); }
-  state.settings.sonAktarim = {id, tarih:new Date().toISOString()};
+  if(yeni.length) state.settings.sonAktarim = {id, tarih:new Date().toISOString()};
   const gunAyar = Math.round(Number(obj.baslangicGunu));
   if(gunAyar>=1 && gunAyar<=28 && gunAyar!==state.settings.startDay &&
      confirm(`Ekstre dönemleri ayın ${gunAyar}'unda başlıyor, uygulamanınki ayın ${state.settings.startDay}'inde.\nDönem başlangıcını ayın ${gunAyar}'u yapalım mı? (Sonra Ayarlar'dan değiştirebilirsin.)`)){
@@ -1196,7 +1208,7 @@ document.getElementById("importFile").onchange=async e=>{
   }
   save();
   viewStart = periodStartFor(new Date());
-  toast(`${yeni.length} işlem eklendi ✓`);
+  toast([yeni.length && `${yeni.length} işlem eklendi`, degisen.length && `${degisen.length} işlem güncellendi`].filter(Boolean).join(", ")+" ✓");
   renderSettings();
 };
 document.getElementById("undoImport").onclick=()=>{
