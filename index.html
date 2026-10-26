@@ -75,6 +75,7 @@
   .li-amt{font-weight:800;font-size:16px;white-space:nowrap}
   .li-amt.neg{color:var(--text)}
   .li-amt.pos{color:var(--green)}
+  .li-amt.trf{color:var(--text-2)}
   .li-del{background:none;border:none;color:#c62828;font-size:17px;cursor:pointer;padding:6px 2px;flex-shrink:0}
   .li-edit{background:none;border:none;font-size:16px;cursor:pointer;padding:6px 2px;flex-shrink:0}
   .li-icon{flex-shrink:0}
@@ -177,6 +178,8 @@
   .brk{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f0f1f6;font-size:14px}
   .brk b{font-weight:800}
   .brk-total{border-bottom:none;border-top:2px solid #e2e5ee;margin-top:4px;padding-top:11px;font-size:15px}
+  .trend svg{width:100%;height:auto;display:block;margin-top:10px}
+  .trend text{font-family:inherit}
 
   /* kilit ekranı + desen padi */
   .lock{position:fixed;inset:0;z-index:100;background:var(--bg);display:none;
@@ -195,9 +198,9 @@
 <body>
 
 <header>
-  <button class="hdr-btn" id="prevPeriod">‹</button>
+  <button class="hdr-btn" id="prevPeriod" aria-label="Önceki dönem" title="Önceki dönem">‹</button>
   <h1 id="periodTitle">—</h1>
-  <button class="hdr-btn" id="nextPeriod">›</button>
+  <button class="hdr-btn" id="nextPeriod" aria-label="Sonraki dönem" title="Sonraki dönem">›</button>
 </header>
 
 <main>
@@ -279,6 +282,30 @@
       <div class="row-between"><b>Aylık net durum</b><b id="balNet2" style="font-size:20px">₺0</b></div>
       <div class="muted" id="balAdvice" style="margin-top:6px"></div>
     </div>
+
+    <!-- Aylar arası: tek amaç "aylar içinde ne değişti?" sorusuna cevap. Seçili dönem dahil son 6 dönem. -->
+    <h3 class="group-title" id="trendHead">Son 6 dönem</h3>
+    <div id="trendEmpty" class="card empty" style="display:none">Grafikler için kayıt gerekiyor. Ayarlar'dan banka ekstresi aktarabilir ya da Ekle'den kayıt girebilirsin.</div>
+    <div id="trendCards">
+      <div class="card">
+        <h3>Gelir ve gider</h3>
+        <p class="muted" id="trendBalTxt"></p>
+        <div class="legend" style="margin-top:8px"><span><i class="dot" style="background:var(--green)"></i>Gelir</span><span><i class="dot" style="background:var(--red)"></i>Gider</span></div>
+        <div id="trendBal" class="trend"></div>
+      </div>
+      <div class="card">
+        <h3>Para nereye gitti?</h3>
+        <p class="muted" id="trendCatTxt"></p>
+        <div class="legend" id="trendCatLeg" style="margin-top:8px"></div>
+        <div id="trendCat" class="trend"></div>
+      </div>
+      <div class="card">
+        <h3>Birikim ve yatırım</h3>
+        <p class="muted" id="trendBirTxt"></p>
+        <div class="legend" style="margin-top:8px"><span><i class="dot" style="background:var(--red)"></i>Birikimden çekilen</span><span><i class="dot" style="background:var(--green)"></i>Birikime eklenen</span></div>
+        <div id="trendBir" class="trend"></div>
+      </div>
+    </div>
   </section>
 
   <!-- GİDER EKLE -->
@@ -289,6 +316,7 @@
     <div class="seg" id="typeSeg">
       <button data-type="expense" class="sel">Gider</button>
       <button data-type="income">Gelir</button>
+      <button data-type="transfer">Birikim</button>
     </div>
 
     <div class="card">
@@ -301,6 +329,22 @@
     <div class="card" id="categoryCard">
       <label class="fld" style="margin-top:0">Kategori</label>
       <div class="chips" id="catChips"></div>
+    </div>
+
+    <div class="card" id="incomeCard" style="display:none">
+      <label class="fld" style="margin-top:0" for="incomeSrc">Gelir kaynağı</label>
+      <div class="chips" id="incChips"></div>
+      <input type="text" id="incomeSrc" maxlength="40" style="margin-top:10px" aria-describedby="incomeSrcHelp">
+      <div class="muted" id="incomeSrcHelp" style="margin-top:6px">Listede yoksa kaynağın adını yaz (ör. burs veren vakıf).</div>
+    </div>
+
+    <div class="card" id="transferCard" style="display:none">
+      <label class="fld" style="margin-top:0">Ne yaptın?</label>
+      <div class="chips" id="yonChips">
+        <button class="chip sel" data-y="giris">Birikimden çektim</button>
+        <button class="chip" data-y="cikis">Birikime yatırdım</button>
+      </div>
+      <div class="muted" style="margin-top:8px">Midas, fon, altın gibi her araç için geçerli. Hangisi olduğunu Açıklama'ya yaz. Gelir ya da gider sayılmaz, Denge sayfasında ayrıca gösterilir.</div>
     </div>
 
     <div class="card">
@@ -390,6 +434,15 @@
     </div>
 
     <div class="card">
+      <h3>Banka Ekstresinden Aktar</h3>
+      <div class="muted">Ekstre dosyasından hazırlanan işlemleri ekler. Mevcut kayıtların silinmez, daha önce eklenenler atlanır.</div>
+      <div class="muted" id="importStat" style="margin-top:8px;color:var(--text);font-weight:700"></div>
+      <button class="btn" id="doImport" style="margin-top:12px">📄 Ekstre işlemlerini içe aktar</button>
+      <input type="file" id="importFile" accept="application/json,.json" style="display:none">
+      <button class="btn" id="undoImport" style="display:none;margin-top:10px;background:#fff;color:var(--red);border:1.5px solid var(--red)">Son aktarımı geri al</button>
+    </div>
+
+    <div class="card">
       <h3>Yedekleme</h3>
       <div class="muted">Verilerin yalnızca bu cihazda tutulur, buluta gönderilmez. Telefon değişirse ya da tarayıcı verileri temizlenirse yedek olmadan geri dönüşü yok — ara sıra yedek al.</div>
       <div class="muted" id="backupStat" style="margin-top:8px;color:var(--text);font-weight:700"></div>
@@ -438,19 +491,54 @@ const LS_KEY = "gelirgider_v1";
 const DB_NAME = "gelirgider", DB_VER = 1;
 let idb = null;
 
+/* Kimlikler (id) eski kayıtlarla uyumlu kalmalı: yalnız ad değişebilir, id değişmez. */
 const CATS = [
-  {id:"market",  name:"Market",     icon:"🛒"},
-  {id:"yemek",   name:"Yemek",      icon:"🍽️"},
-  {id:"fatura",  name:"Fatura",     icon:"🧾"},
-  {id:"vergi",   name:"Vergi",      icon:"🏛️"},
-  {id:"ulasim",  name:"Ulaşım",     icon:"🚗"},
-  {id:"beyaz",   name:"Beyaz Eşya", icon:"🧊"},
-  {id:"saglik",  name:"Sağlık",     icon:"💊"},
-  {id:"eglence", name:"Eğlence",    icon:"🎬"},
-  {id:"giyim",   name:"Giyim",      icon:"👕"},
-  {id:"diger",   name:"Diğer",      icon:"📦"},
+  {id:"market",  name:"Market",            icon:"🛒"},
+  {id:"yemek",   name:"Yemek & kahve",     icon:"🍽️"},
+  {id:"fatura",  name:"Fatura & telefon",  icon:"🧾"},
+  {id:"ulasim",  name:"Ulaşım",            icon:"🚗"},
+  {id:"giyim",   name:"Giyim & bakım",     icon:"👕"},
+  {id:"eglence", name:"Sosyal & eğlence",  icon:"🎬"},
+  {id:"dijital", name:"Dijital & üyelik",  icon:"💻"},
+  {id:"okul",    name:"Okul & gelişim",    icon:"🎓"},
+  {id:"ev",      name:"Ev & ihtiyaç",      icon:"🏠"},
+  {id:"saglik",  name:"Sağlık",            icon:"💊"},
+  {id:"nakit",   name:"Nakit çekim",       icon:"💵"},
+  {id:"kart",    name:"Kredi kartı",       icon:"💳"},
+  {id:"faiz",    name:"Faiz & masraf",     icon:"🏦"},
+  {id:"vergi",   name:"Vergi",             icon:"🏛️"},
+  {id:"beyaz",   name:"Beyaz eşya",        icon:"🧊"},
+  {id:"diger",   name:"Diğer",             icon:"📦"},
 ];
 const catById = id => CATS.find(c=>c.id===id) || CATS[CATS.length-1];
+
+/* Gelir kategorisi serbest metindir (ör. kaynağın adı); eski kayıtlarda "gelir" yazar. */
+const INCOME_DEFAULTS = ["Burs","Aile","Maaş / staj","Ek gelir"];
+const incomeLabel = c => (!c || c==="gelir") ? "Diğer gelir" : c;
+/* En çok kullanılan kaynaklar önce; varsayılanlar yalnız boşluğu doldurur. En fazla 6 çip (seçim yükü). */
+function incomeLabels(){
+  const say = {};
+  for(const t of state.transactions) if(t.type==="income"){ const l=incomeLabel(t.category); say[l]=(say[l]||0)+1; }
+  const used = Object.keys(say).sort((a,b)=>say[b]-say[a]);
+  return [...new Set([...used, ...INCOME_DEFAULTS])].slice(0, Math.max(4, Math.min(6, used.length)));
+}
+
+/* Transfer: gelir de gider de değildir, toplamlara girmez. yon: "giris" (hesaba) | "cikis" (hesaptan) */
+const TRANSFER_CATS = {
+  /* Tek kategori: Midas, fon, hisse, altın... hangi araç olduğu kaydın adında yazar. */
+  birikim: {name:"Birikim & yatırım", icon:"🐷", giris:"Birikimden çekiş", cikis:"Birikime yatırma"},
+  yatirim: {name:"Birikim & yatırım", icon:"📈", giris:"Yatırımdan çekiş", cikis:"Yatırıma aktarım"},
+};
+const transferCat = id => TRANSFER_CATS[id] || TRANSFER_CATS.birikim;
+
+/* Bir kaydın listede görünen simgesi ve kategori adı */
+function catInfo(t){
+  if(t.type==="income") return {icon:"💼", name:incomeLabel(t.category)};
+  if(t.type==="transfer"){ const c=transferCat(t.category); return {icon:c.icon, name:c[t.yon]||c.name}; }
+  return catById(t.category);
+}
+/* Gider tutarı: iade o kategoriden düşer */
+const expAmt = t => t.iade ? -t.amount : t.amount;
 
 function defaults(){
   return { settings:{startDay:1, monthlyIncome:0, fixedExpenses:[]},
@@ -528,7 +616,9 @@ function save(){
 }
 
 /* ---------- yardımcılar ---------- */
-const fmt = n => "₺" + (Math.round(n*100)/100).toLocaleString("tr-TR",{minimumFractionDigits:(n%1?2:0),maximumFractionDigits:2});
+/* Eksi işaret para biriminden önce: −₺1.250,50 (₺-1.250,50 değil) */
+const fmt = n => { const a=Math.abs(Math.round(n*100)/100);
+  return (n<0 && a>0 ? "−" : "") + "₺" + a.toLocaleString("tr-TR",{minimumFractionDigits:(a%1?2:0),maximumFractionDigits:2}); };
 const AYLAR = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
 function toDate(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
 function iso(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
@@ -583,6 +673,21 @@ function txInPeriod(pStart){
   });
 }
 
+/* Bir dönemin özeti: Denge kartı ve aylar arası grafikler aynı hesabı kullanır. */
+function periodSummary(pStart){
+  const txs = txInPeriod(pStart), inst = installmentsInPeriod(pStart);
+  const income = (state.settings.monthlyIncome||0) + txs.filter(t=>t.type==="income").reduce((a,t)=>a+t.amount,0);
+  const fixedBase = state.settings.fixedExpenses.reduce((a,f)=>a+(f.amount||0),0);
+  const byCat = {};
+  if(fixedBase) byCat.sabit = fixedBase;
+  for(const i of inst) byCat[i.tx.category] = (byCat[i.tx.category]||0) + i.monthly;
+  for(const t of txs) if(t.type==="expense") byCat[t.category] = (byCat[t.category]||0) + expAmt(t);
+  const expense = Object.values(byCat).reduce((a,v)=>a+v,0);
+  const birikim = txs.filter(t=>t.type==="transfer")
+                     .reduce((a,t)=>a+(t.yon==="giris"?t.amount:-t.amount),0);
+  return {income, expense, byCat, birikim, count: txs.length + inst.length};
+}
+
 /* ---------- toast ---------- */
 let toastT;
 function toast(msg){
@@ -596,6 +701,7 @@ function goPage(name){
   document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("sel", x.dataset.page===name));
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
   document.getElementById("page-"+name).classList.add("active");
+  document.title = ({home:"Ana Sayfa",balance:"Denge",add:"Ekle",history:"Ajanda",settings:"Ayarlar"}[name]||"Ana Sayfa") + " · Gelir Gider";
   window.scrollTo(0,0);
   if(name==="home") renderHome();
   if(name==="balance") renderBalance();
@@ -627,7 +733,7 @@ function renderHome(){
   const fixedBase = state.settings.fixedExpenses.reduce((a,f)=>a+(f.amount||0),0);
   const fixedInst = inst.reduce((a,i)=>a+i.monthly,0);
   const fixed = fixedBase + fixedInst;
-  const variable = txs.filter(t=>t.type==="expense").reduce((a,t)=>a+t.amount,0);
+  const variable = txs.filter(t=>t.type==="expense").reduce((a,t)=>a+expAmt(t),0);
   const spent = fixed + variable;
   const remain = income - spent;
   const pct = income>0 ? Math.round(spent/income*100) : (spent>0?100:0);
@@ -655,7 +761,7 @@ function renderHome(){
   document.getElementById("varListTotal").textContent = fmt(variable);
   document.getElementById("homeVarList").innerHTML = varItems.length
     ? varItems.map(t=>{ const c=catById(t.category); const d=toDate(t.date);
-        return `<div class="mini-row"><span>${c.icon} ${esc(t.name)}<span class="mr-date">${d.getDate()} ${AYLAR[d.getMonth()].slice(0,3)}</span></span><b>${fmt(t.amount)}</b></div>`; }).join("")
+        return `<div class="mini-row"><span>${c.icon} ${esc(t.name)}${t.iade?' (iade)':''}<span class="mr-date">${d.getDate()} ${AYLAR[d.getMonth()].slice(0,3)}</span></span><b>${t.iade?'−':''}${fmt(t.amount)}</b></div>`; }).join("")
     : '<div class="empty" style="padding:10px 0">Bu dönemde değişken harcama yok.</div>';
 
   const box = document.getElementById("homeInstallments");
@@ -684,12 +790,36 @@ catChips.onclick=e=>{
   addCat=b.dataset.c;
   catChips.querySelectorAll(".chip").forEach(x=>x.classList.toggle("sel",x.dataset.c===addCat));
 };
+/* Seçili türe göre ilgili kartları göster */
+function showTypeCards(){
+  document.querySelectorAll("#typeSeg button").forEach(x=>x.classList.toggle("sel", x.dataset.type===addType));
+  document.getElementById("categoryCard").style.display = addType==="expense"?"":"none";
+  document.getElementById("taksitCard").style.display   = addType==="expense"?"":"none";
+  document.getElementById("incomeCard").style.display   = addType==="income"?"":"none";
+  document.getElementById("transferCard").style.display = addType==="transfer"?"":"none";
+  if(addType==="income") renderIncChips();
+}
+const incInput=document.getElementById("incomeSrc");
+function renderIncChips(){
+  const cur=incInput.value.trim();
+  document.getElementById("incChips").innerHTML = incomeLabels().map(l=>
+    `<button class="chip${l===cur?' sel':''}" data-l="${esc(l)}">${esc(l)}</button>`).join("");
+}
+document.getElementById("incChips").onclick=e=>{
+  const b=e.target.closest(".chip"); if(!b) return;
+  incInput.value=b.dataset.l; renderIncChips();
+};
+incInput.oninput=renderIncChips;
+let addYon="giris";
+function selYon(){ document.querySelectorAll("#yonChips .chip").forEach(x=>x.classList.toggle("sel", x.dataset.y===addYon)); }
+document.getElementById("yonChips").onclick=e=>{
+  const b=e.target.closest(".chip"); if(!b) return;
+  addYon=b.dataset.y; selYon();
+};
 document.getElementById("typeSeg").onclick=e=>{
   const b=e.target.closest("button"); if(!b) return;
   addType=b.dataset.type;
-  document.querySelectorAll("#typeSeg button").forEach(x=>x.classList.toggle("sel",x===b));
-  document.getElementById("categoryCard").style.display = addType==="expense"?"":"none";
-  document.getElementById("taksitCard").style.display = addType==="expense"?"":"none";
+  showTypeCards();
 };
 document.getElementById("addDate").value = iso(new Date());
 
@@ -716,10 +846,8 @@ function setEditUI(on){
 function clearForm(){
   editingId=null;
   // tip + kategori varsayılana dönsün (aksi halde gelir düzenlemesinden sonra yeni kayıt gelir olarak kaydedilir)
-  addType="expense"; addCat="market";
-  document.querySelectorAll("#typeSeg button").forEach(x=>x.classList.toggle("sel", x.dataset.type==="expense"));
-  document.getElementById("categoryCard").style.display="";
-  document.getElementById("taksitCard").style.display="";
+  addType="expense"; addCat="market"; addYon="giris"; incInput.value="";
+  showTypeCards(); selYon();
   catChips.querySelectorAll(".chip").forEach(x=>x.classList.toggle("sel", x.dataset.c===addCat));
   document.getElementById("addAmount").value="";
   document.getElementById("addName").value="";
@@ -735,9 +863,9 @@ function startEdit(id){
   if(!t) return;
   editingId=id;
   addType=t.type;
-  document.querySelectorAll("#typeSeg button").forEach(x=>x.classList.toggle("sel", x.dataset.type===t.type));
-  document.getElementById("categoryCard").style.display = t.type==="expense"?"":"none";
-  document.getElementById("taksitCard").style.display  = t.type==="expense"?"":"none";
+  incInput.value = t.type==="income" ? incomeLabel(t.category) : "";
+  addYon = t.yon==="cikis" ? "cikis" : "giris"; selYon();
+  showTypeCards();
   document.getElementById("addAmount").value=t.amount;
   document.getElementById("addName").value=t.name;
   document.getElementById("addDate").value=t.date;
@@ -760,17 +888,24 @@ document.getElementById("saveTx").onclick=()=>{
   const date=document.getElementById("addDate").value;
   if(!amt || amt<=0){ toast("Lütfen geçerli bir miktar girin."); return; }
   if(!date){ toast("Lütfen tarih seçin."); return; }
+  const eski = editingId ? state.transactions.find(x=>x.id===editingId) : null;
+  const kaynak = incInput.value.trim().slice(0,40) || "Diğer gelir";
+  const trfCat = (eski && eski.type==="transfer") ? eski.category : "birikim";
   const data={
     type: addType,
-    name: name || (addType==="income" ? "Gelir" : catById(addCat).name),
-    category: addType==="expense" ? addCat : "gelir",
+    name: name || (addType==="income" ? kaynak
+                 : addType==="transfer" ? transferCat(trfCat)[addYon] : catById(addCat).name),
+    category: addType==="expense" ? addCat : addType==="income" ? kaynak : trfCat,
     amount: amt,
     date: date,
     installments: (addType==="expense" && tgl.checked) ? +rng.value : null
   };
+  if(addType==="transfer") data.yon=addYon;
   if(editingId){
-    const t=state.transactions.find(x=>x.id===editingId);
+    const t=eski;
     if(!t){ toast("Kayıt bulunamadı."); clearForm(); return; }
+    if(addType!=="transfer") delete t.yon;
+    if(addType!=="expense") delete t.iade;
     Object.assign(t,data); save();
     clearForm();
     toast("Güncellendi ✓");
@@ -816,7 +951,7 @@ function renderHistory(){
   const q=document.getElementById("searchBox").value.trim().toLocaleLowerCase("tr");
   const list=document.getElementById("historyList");
   let txs=[...state.transactions].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id));
-  if(q) txs=txs.filter(t=>(t.name+" "+catById(t.category).name).toLocaleLowerCase("tr").includes(q));
+  if(q) txs=txs.filter(t=>(t.name+" "+catInfo(t).name).toLocaleLowerCase("tr").includes(q));
   if(!txs.length){ list.innerHTML='<div class="empty">Kayıt bulunamadı. ➕ Ekle sekmesinden ilk işleminizi girin.</div>'; return; }
 
   const groups=new Map();
@@ -827,20 +962,22 @@ function renderHistory(){
   }
   let html="";
   for(const [k,items] of [...groups.entries()].sort((a,b)=>b[0].localeCompare(a[0]))){
-    const tot=items.reduce((a,t)=>a+(t.type==="income"?t.amount:-t.amount),0);
+    const tot=items.reduce((a,t)=>a+(t.type==="income"?t.amount:t.type==="expense"?-expAmt(t):0),0);
     html+=`<div class="group-title row-between"><span>${groupTitle(k)}</span>
       <span style="font-size:14px;color:${tot>=0?'var(--green)':'var(--red)'}">${tot>=0?'+':''}${fmt(Math.abs(tot))}</span></div>`;
     html+=`<div class="card" style="padding:8px 14px">`+items.map(t=>{
-      const c = t.type==="income" ? {icon:"💼",name:"Gelir"} : catById(t.category);
-      const sub = t.installments ? `${c.name} • ${t.installments} Taksit` : c.name;
-      const amtTxt = t.type==="income" ? "+"+fmt(t.amount) : "-"+fmt(t.amount);
+      const c = catInfo(t);
+      const sub = (t.installments ? `${c.name} • ${t.installments} Taksit` : c.name) + (t.iade ? " • iade" : "");
+      const giris = t.type==="income" || t.iade || (t.type==="transfer" && t.yon==="giris");
+      const amtTxt = (giris?"+":"−")+fmt(t.amount);
+      const amtCls = t.type==="transfer" ? "trf" : (giris?"pos":"neg");
       return `<div class="list-item">
         <div class="li-icon">${c.icon}</div>
         <div class="li-body">
           <div class="li-title">${esc(t.name)}</div>
           <div class="li-sub">${sub} • ${toDate(t.date).getDate()} ${AYLAR[toDate(t.date).getMonth()].slice(0,3)}</div>
         </div>
-        <div class="li-amt ${t.type==="income"?"pos":"neg"}">${amtTxt}</div>
+        <div class="li-amt ${amtCls}">${amtTxt}</div>
         <button class="li-edit" data-edit="${t.id}" title="Düzenle">✏️</button>
         <button class="li-del" data-del="${t.id}" title="Sil">🗑</button>
       </div>`;
@@ -868,6 +1005,7 @@ function renderSettings(){
   renderFixedList();
   renderSecurity();
   renderBackupStat();
+  renderImportStat();
 }
 function renderFixedList(){
   const box=document.getElementById("fixedList");
@@ -936,16 +1074,23 @@ function sanitizeTx(arr){
     let id = String(t.id||"");
     if(!id || seen.has(id)) id = Date.now()+"-"+Math.random().toString(36).slice(2,7);
     seen.add(id);
-    const type = (t.type==="income") ? "income" : "expense";
+    const type = (t.type==="income"||t.type==="transfer") ? t.type : "expense";
     let inst = (t.installments==null) ? null : Math.round(Number(t.installments));
     if(!(inst>=2 && inst<=600)) inst=null;
-    out.push({
+    let category = String(t.category || (type==="income"?"gelir":"diger")).slice(0,40);
+    if(type==="transfer" && !TRANSFER_CATS[category]) category="birikim";
+    const x = {
       id, type,
       name: String(t.name||"").slice(0,120) || (type==="income"?"Gelir":"Harcama"),
-      category: String(t.category || (type==="income"?"gelir":"diger")).slice(0,40),
-      amount, date,
-      installments: (type==="expense") ? inst : null
-    });
+      category, amount, date,
+      installments: (type==="expense" && !t.iade) ? inst : null
+    };
+    if(type==="transfer") x.yon = (t.yon==="cikis") ? "cikis" : "giris";
+    if(type==="expense" && t.iade===true) x.iade = true;
+    if(t.extId)   x.extId   = String(t.extId).slice(0,40);
+    if(t.hesap)   x.hesap   = String(t.hesap).slice(0,40);
+    if(t.aktarim) x.aktarim = String(t.aktarim).slice(0,40);
+    out.push(x);
   }
   return out;
 }
@@ -1002,6 +1147,67 @@ document.getElementById("restoreFile").onchange=async e=>{
   renderSettings(); renderHome();
 };
 
+/* ---------- EKSTRE AKTARIMI (birleştirerek) ----------
+   Dosya, ekstre motorunun ürettiği {uygulama:"gelirgider-aktarim", islemler:[...]} biçimindedir.
+   Her işlemin kalıcı extId'si var: zaten olanlar atlanır, aynı dosya iki kez yüklense de çift kayıt olmaz. */
+function renderImportStat(){
+  const el=document.getElementById("importStat"); if(!el) return;
+  const n=state.transactions.filter(t=>t.extId).length;
+  const son=state.settings.sonAktarim;
+  el.textContent = n ? `Ekstreden gelen kayıt: ${n}` : "Henüz ekstreden aktarım yapılmadı.";
+  const undo=document.getElementById("undoImport");
+  const kalan = son ? state.transactions.filter(t=>t.aktarim===son.id).length : 0;
+  undo.style.display = kalan ? "" : "none";
+  if(kalan) undo.textContent = `Son aktarımı geri al (${kalan} işlem)`;
+}
+document.getElementById("doImport").onclick=()=>document.getElementById("importFile").click();
+document.getElementById("importFile").onchange=async e=>{
+  const inp=e.target, f=inp.files && inp.files[0];
+  inp.value="";
+  if(!f) return;
+  let obj=null;
+  try{ obj=JSON.parse(await f.text()); }
+  catch(_){ toast("Dosya okunamadı. Ekstre motorunun ürettiği .json dosyasını seçin."); return; }
+  if(!obj || obj.uygulama!=="gelirgider-aktarim" || !Array.isArray(obj.islemler)){
+    toast(obj && obj.uygulama==="gelirgider" ? "Bu bir yedek dosyası. Yedekten Geri Yükle'yi kullanın."
+                                             : "Bu dosya bir ekstre aktarım dosyası değil.");
+    return;
+  }
+  const gelen = sanitizeTx(obj.islemler.filter(t=>t && t.extId));
+  const var_ = new Set(state.transactions.filter(t=>t.extId).map(t=>t.extId));
+  const yeni = gelen.filter(t=>!var_.has(t.extId));
+  const atlanan = gelen.length - yeni.length;
+  if(!yeni.length){ toast(`Yeni işlem yok: ${atlanan} işlemin hepsi zaten eklenmiş.`); return; }
+  const say = tip => yeni.filter(t=>t.type===tip).length;
+  const tarihler = yeni.map(t=>t.date).sort();
+  const gun = s => { const d=toDate(s); return d.getDate()+" "+AYLAR[d.getMonth()]+" "+d.getFullYear(); };
+  let mesaj = `${yeni.length} yeni işlem eklenecek (${gun(tarihler[0])} – ${gun(tarihler[tarihler.length-1])}):\n`
+    + `• ${say("expense")} gider\n• ${say("income")} gelir\n• ${say("transfer")} birikim/yatırım hareketi`
+    + (atlanan ? `\n\n${atlanan} işlem zaten ekli olduğu için atlanacak.` : "")
+    + `\n\nMevcut kayıtların silinmez. Aynı harcamayı elle de girdiysen iki kez görünür.\nDevam edilsin mi?`;
+  if(!confirm(mesaj)) return;
+  const id = "akt-"+Date.now();
+  for(const t of yeni){ t.aktarim=id; state.transactions.push(t); }
+  state.settings.sonAktarim = {id, tarih:new Date().toISOString()};
+  const gunAyar = Math.round(Number(obj.baslangicGunu));
+  if(gunAyar>=1 && gunAyar<=28 && gunAyar!==state.settings.startDay &&
+     confirm(`Ekstre dönemleri ayın ${gunAyar}'unda başlıyor, uygulamanınki ayın ${state.settings.startDay}'inde.\nDönem başlangıcını ayın ${gunAyar}'u yapalım mı? (Sonra Ayarlar'dan değiştirebilirsin.)`)){
+    state.settings.startDay = gunAyar;
+  }
+  save();
+  viewStart = periodStartFor(new Date());
+  toast(`${yeni.length} işlem eklendi ✓`);
+  renderSettings();
+};
+document.getElementById("undoImport").onclick=()=>{
+  const son=state.settings.sonAktarim; if(!son) return;
+  const n=state.transactions.filter(t=>t.aktarim===son.id).length;
+  if(!confirm(`Son aktarımda eklenen ${n} işlem silinecek. Elle girdiğin kayıtlar kalır.\nDevam edilsin mi?`)) return;
+  state.transactions = state.transactions.filter(t=>t.aktarim!==son.id);
+  delete state.settings.sonAktarim;
+  save(); renderSettings(); toast(`${n} işlem geri alındı`);
+};
+
 /* ---------- DENGE ---------- */
 function renderBalance(){
   document.getElementById("periodTitle").textContent = periodLabel(viewStart);
@@ -1012,7 +1218,7 @@ function renderBalance(){
   const income = (state.settings.monthlyIncome||0) + extraIncome;
   const fixedBase = state.settings.fixedExpenses.reduce((a,f)=>a+(f.amount||0),0);
   const instSum = inst.reduce((a,i)=>a+i.monthly,0);
-  const variable = txs.filter(t=>t.type==="expense").reduce((a,t)=>a+t.amount,0);
+  const variable = txs.filter(t=>t.type==="expense").reduce((a,t)=>a+expAmt(t),0);
   const totalExp = fixedBase + instSum + variable;
   const net = income - totalExp;
   const pct = income>0 ? Math.round(totalExp/income*100) : (totalExp>0?100:0);
@@ -1043,6 +1249,91 @@ function renderBalance(){
   else if(net<0) adv.textContent = "Bu dönem gelirinden fazla harcama var. Değişken harcamaları gözden geçir.";
   else if(pct>85) adv.textContent = "Gelirinin çoğunu harcadın, dikkatli ol.";
   else adv.textContent = "Bütçen dengede görünüyor 👍";
+  renderTrends();
+}
+
+/* ---------- AYLAR ARASI (SVG, kütüphanesiz: uygulama internetsiz çalışmalı) ---------- */
+const TREND_N = 6, TW = 480, TH = 190, TPAD = {l:64, r:8, t:10, b:26};
+const TREND_RENK = ["#2a78d6","#eb6834","#1baf7a","#eda100","#e87ba4"], DIGER_RENK = "#9aa1b0";
+const kisaTL = v => { const a=Math.abs(v); return (v<0?"−":"")+"₺"+(a>=1000 ? (Math.round(a/100)/10).toLocaleString("tr-TR")+" bin" : Math.round(a)); };
+
+function trendFrame(etiketler, maks, min=0){
+  const ih = TH-TPAD.t-TPAD.b, iw = TW-TPAD.l-TPAD.r, aralik = (maks-min)||1;
+  const y = v => TPAD.t + ih*(1-(v-min)/aralik);
+  let s = "";
+  for(const v of [min, min+aralik/2, maks]){
+    s += `<line x1="${TPAD.l}" x2="${TW-TPAD.r}" y1="${y(v)}" y2="${y(v)}" stroke="#e6e9f0"/>`
+       + `<text x="${TPAD.l-6}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="#5b6070">${kisaTL(v)}</text>`;
+  }
+  if(min<0) s += `<line x1="${TPAD.l}" x2="${TW-TPAD.r}" y1="${y(0)}" y2="${y(0)}" stroke="#9aa1b0"/>`;
+  const sw = iw/etiketler.length;
+  etiketler.forEach((e,i)=>{ s += `<text x="${TPAD.l+sw*i+sw/2}" y="${TH-8}" text-anchor="middle" font-size="12" fill="#5b6070">${e}</text>`; });
+  return {s, y, sw, x0:TPAD.l};
+}
+const svgSar = (ic, ozet) => `<svg viewBox="0 0 ${TW} ${TH}" role="img" aria-label="${esc(ozet)}">${ic}</svg>`;
+
+function renderTrends(){
+  const donemler = [];
+  for(let k=TREND_N-1; k>=0; k--) donemler.push(addMonthsToPeriod(viewStart,-k));
+  const oz = donemler.map(periodSummary);
+  const bos = oz.every(o=>!o.count && !o.income);
+  document.getElementById("trendEmpty").style.display = bos ? "" : "none";
+  document.getElementById("trendCards").style.display = bos ? "none" : "";
+  if(bos) return;
+  const et = donemler.map(d=>AYLAR[d.getMonth()].slice(0,3));
+  const ad = d => periodLabel(d);
+
+  // 1) Gelir ve gider
+  const maks1 = Math.max(1, ...oz.map(o=>Math.max(o.income,o.expense)));
+  let f = trendFrame(et, maks1), ic = f.s;
+  oz.forEach((o,i)=>{
+    const bw = Math.min(18, f.sw/3), x = f.x0+f.sw*i+f.sw/2;
+    ic += `<rect x="${x-bw-1}" y="${f.y(o.income)}" width="${bw}" height="${f.y(0)-f.y(o.income)}" rx="3" fill="#0e7a3c"><title>${ad(donemler[i])} gelir ${fmt(o.income)}</title></rect>`;
+    ic += `<rect x="${x+1}" y="${f.y(Math.max(o.expense,0))}" width="${bw}" height="${f.y(0)-f.y(Math.max(o.expense,0))}" rx="3" fill="#c62828"><title>${ad(donemler[i])} gider ${fmt(o.expense)}</title></rect>`;
+  });
+  const dolu = oz.filter(o=>o.count||o.income);
+  const ortG = dolu.reduce((a,o)=>a+o.income,0)/dolu.length, ortX = dolu.reduce((a,o)=>a+o.expense,0)/dolu.length;
+  const t1 = `Kayıtlı ${dolu.length} dönemde ortalama gelir ${fmt(Math.round(ortG))}, gider ${fmt(Math.round(ortX))}. `
+    + (ortX>ortG ? `Her ay ortalama ${fmt(Math.round(ortX-ortG))} açık var.` : `Her ay ortalama ${fmt(Math.round(ortG-ortX))} artıyor.`);
+  document.getElementById("trendBalTxt").textContent = t1;
+  document.getElementById("trendBal").innerHTML = svgSar(ic, t1);
+
+  // 2) Kategori istifi: 6 dönemin en büyük 5 kategorisi, gerisi "Diğer"
+  const top = {};
+  oz.forEach(o=>{ for(const [k,v] of Object.entries(o.byCat)) top[k]=(top[k]||0)+v; });
+  const ilk5 = Object.entries(top).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,5).map(e=>e[0]);
+  const kAd = k => k==="sabit" ? "Sabit giderler" : catById(k).name;
+  const seri = [...ilk5.map((k,i)=>({k, ad:kAd(k), renk:TREND_RENK[i]})), {k:"_", ad:"Diğer", renk:DIGER_RENK}];
+  const deger = (o,k) => k==="_" ? Object.entries(o.byCat).filter(e=>!ilk5.includes(e[0])).reduce((a,e)=>a+e[1],0) : (o.byCat[k]||0);
+  const maks2 = Math.max(1, ...oz.map(o=>seri.reduce((a,s)=>a+Math.max(deger(o,s.k),0),0)));
+  f = trendFrame(et, maks2); ic = f.s;
+  oz.forEach((o,i)=>{
+    const bw = Math.min(30, f.sw*0.55), x = f.x0+f.sw*i+f.sw/2-bw/2; let alt = 0;
+    for(const s of seri){
+      const v = Math.max(deger(o,s.k),0); if(!v) continue;
+      ic += `<rect x="${x}" y="${f.y(alt+v)}" width="${bw}" height="${f.y(alt)-f.y(alt+v)}" fill="${s.renk}" stroke="#fff" stroke-width="1"><title>${ad(donemler[i])} ${esc(s.ad)} ${fmt(Math.round(v))}</title></rect>`;
+      alt += v;
+    }
+  });
+  const enBuyuk = seri[0] && ilk5.length ? `En büyük kalem ${seri[0].ad}: 6 dönemde ${fmt(Math.round(top[ilk5[0]]))}.` : "Bu dönemlerde gider yok.";
+  document.getElementById("trendCatTxt").textContent = enBuyuk;
+  document.getElementById("trendCatLeg").innerHTML = seri.map(s=>`<span><i class="dot" style="background:${s.renk}"></i>${esc(s.ad)}</span>`).join("");
+  document.getElementById("trendCat").innerHTML = svgSar(ic, enBuyuk);
+
+  // 3) Birikim ve yatırım: artı = birikimden çekildi (harcamaya destek), eksi = birikime eklendi
+  const bv = oz.map(o=>o.birikim);
+  const m3 = Math.max(1, ...bv.map(Math.abs));
+  f = trendFrame(et, m3, bv.some(v=>v<0) ? -m3 : 0); ic = f.s;
+  bv.forEach((v,i)=>{
+    if(!v) return;
+    const bw = Math.min(24, f.sw*0.5), x = f.x0+f.sw*i+f.sw/2-bw/2, ust = f.y(Math.max(v,0)), alt = f.y(Math.min(v,0));
+    ic += `<rect x="${x}" y="${ust}" width="${bw}" height="${alt-ust}" rx="3" fill="${v>0?'#c62828':'#0e7a3c'}"><title>${ad(donemler[i])} ${v>0?'birikimden çekilen':'birikime eklenen'} ${fmt(Math.abs(Math.round(v)))}</title></rect>`;
+  });
+  const net = bv.reduce((a,v)=>a+v,0);
+  const t3 = !bv.some(v=>v) ? "Bu dönemlerde birikim ya da yatırım hareketi yok."
+    : net>0 ? `6 dönemde birikimden net ${fmt(Math.round(net))} çekildi.` : `6 dönemde birikime net ${fmt(Math.round(-net))} eklendi.`;
+  document.getElementById("trendBirTxt").textContent = t3;
+  document.getElementById("trendBir").innerHTML = svgSar(ic, t3);
 }
 
 /* ---------- GÜVENLİK: desen kilidi ---------- */

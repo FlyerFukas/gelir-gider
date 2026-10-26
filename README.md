@@ -5,7 +5,9 @@ ana ekrana eklenebilir ve **internetsiz çalışır**.
 
 ## Özellikler
 
-- **Gider / gelir ekleme** — 10 kategori, tarih seçimi
+- **Gider / gelir / birikim ekleme** — 16 gider kategorisi, gelir kaynağı (serbest ad), birikim & yatırım hareketi (gelir/gider sayılmaz)
+- **Banka ekstresinden aktarma** — dış ekstre motorunun ürettiği `gelirgider-aktarim` JSON'u birleştirerek ekler; `extId` ile tekrarları atlar, son aktarım geri alınabilir
+- **Aylar arası** — Denge sayfasında son 6 dönem: gelir–gider, gider dağılımı, birikim/yatırım akışı (kütüphanesiz SVG, internetsiz çalışır)
 - **Taksitlendirme** — 2–24 ay; taksit her ay otomatik olarak o ayın giderine eklenir
 - **Sabit aylık giderler** — kira, fatura, aidat gibi düzenli ödemeler
 - **Hesap dönemi** — ayın kaçında başlayacağını kendin seçersin (1'i, 15'i…)

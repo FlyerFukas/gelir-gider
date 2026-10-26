@@ -18,3 +18,8 @@ desktop.ini
 *.log
 *.tmp
 .vercel
+
+# Yerel araçlar ve denetim çıktıları
+.claude/
+erisim-rapor/
+rapor.md
