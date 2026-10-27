@@ -23,3 +23,7 @@ desktop.ini
 .claude/
 erisim-rapor/
 rapor.md
+
+# Erişilebilirlik denetimi (oturum dosyası çerez içerir, asla commit'lenmez)
+erisim/denetim/node_modules/
+erisim/oturum*.json
