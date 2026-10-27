@@ -6,6 +6,8 @@ ana ekrana eklenebilir ve **internetsiz çalışır**.
 ## Özellikler
 
 - **Gider / gelir / birikim ekleme** — 16 gider kategorisi, gelir kaynağı (serbest ad), birikim & yatırım hareketi (gelir/gider sayılmaz)
+- **Ana sayfada Giderler / Gelirler sekmeleri** — kaleme ve kaynağa göre toplam, dokununca o başlığın işlemleri (düzenlenebilir)
+- **Gelir kaynakları ve gider kalemleri yönetimi** — Ayarlar'dan ekle, adını değiştir, sil (kayıtlar seçilen yere taşınır; eşleme sayesinde sonraki aktarım eski adı geri getirmez)
 - **Banka ekstresinden aktarma** — dış ekstre motorunun ürettiği `gelirgider-aktarim` JSON'u birleştirerek ekler; `extId` ile tekrarları atlar, son aktarım geri alınabilir
 - **Aylar arası** — Denge sayfasında son 6 dönem: gelir–gider, gider dağılımı, birikim/yatırım akışı (kütüphanesiz SVG, internetsiz çalışır)
 - **Taksitlendirme** — 2–24 ay; taksit her ay otomatik olarak o ayın giderine eklenir

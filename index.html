@@ -43,7 +43,7 @@
   .card.acc-green{border-left:5px solid #0a7a35}
   .card.acc-red{border-left:5px solid #c62828}
   .card h3{font-size:17px;font-weight:800;margin-bottom:4px}
-  .muted{color:var(--text-2);font-size:13px}
+  .muted{color:var(--text-2);font-size:13px;line-height:1.45}
   .amount-lg{font-size:32px;font-weight:900;margin-top:10px}
   .amount-md{font-size:24px;font-weight:900;margin-top:8px}
   .arrow-up{color:var(--red);font-weight:700}
@@ -91,7 +91,7 @@
     font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text)}
   .chip.sel{background:var(--primary-light);border-color:var(--primary);color:var(--primary)}
   .seg{display:flex;background:#e7e9f1;border-radius:12px;padding:4px;margin-bottom:14px}
-  .seg button{flex:1;border:none;background:none;padding:10px;border-radius:9px;font-weight:700;
+  .seg button{flex:1;border:none;background:none;padding:10px;border-radius:9px;font-weight:700;min-height:44px;
     font-size:14px;cursor:pointer;font-family:inherit;color:var(--text-2)}
   .seg button.sel{background:var(--primary);color:#fff}
   .row-between{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -117,7 +117,7 @@
   nav button.sel{color:#0a5c2b}
   nav button.sel .ico{background:var(--green-bg)}
 
-  .empty{text-align:center;color:var(--text-2);padding:24px 10px;font-size:14px}
+  .empty{text-align:center;color:var(--text-2);padding:24px 10px;font-size:14px;line-height:1.45}
   .group-title{font-size:17px;font-weight:800;margin:18px 0 8px}
   .fixed-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
   .fixed-row input.fx-name{flex:1.2}
@@ -165,6 +165,44 @@
   .mini-row span{color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .mini-row b{font-weight:700;white-space:nowrap;color:var(--text)}
   .mini-row .mr-date{font-size:11px;color:#9aa1b0;margin-left:6px}
+
+  /* ana sayfa: kalem/kaynak grupları (dokununca işlemler açılır) */
+  details.grp{border-bottom:1px solid #f0f1f6}
+  details.grp:last-child{border-bottom:none}
+  details.grp summary{list-style:none;cursor:pointer;padding:11px 0 9px;display:grid;
+    grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline}
+  details.grp summary::-webkit-details-marker{display:none}
+  .g-ad{font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .g-ad::before{content:"▸";display:inline-block;width:14px;color:var(--text-2);transition:transform .15s}
+  details.grp[open] .g-ad::before{transform:rotate(90deg)}
+  .g-tut{font-weight:800;font-size:15px;white-space:nowrap}
+  .g-alt{grid-column:1/-1;font-size:13px;color:var(--text-2);padding-left:14px}
+  .g-bar{grid-column:1/-1;height:6px;border-radius:3px;background:#e6e9f0;overflow:hidden;margin-left:14px}
+  .g-bar i{display:block;height:100%;background:var(--primary)}
+  .g-bar.gelir i{background:var(--green)}
+  .g-list{padding:0 0 8px 14px}
+  .mr-btn{width:100%;background:none;border:none;border-bottom:1px solid #f2f3f7;font-family:inherit;
+    cursor:pointer;text-align:left;padding:10px 0;font-size:14px;min-height:44px}
+  .mr-btn:last-child{border-bottom:none}
+  .mr-btn span{font-size:14px}
+  .mr-btn .mr-tarih{display:inline-block;min-width:50px;font-size:12px;color:#7a8191}
+  .alt-eylem{display:flex;gap:10px;margin-top:12px}
+  .btn.ikincil{background:#fff;color:var(--primary);border:1.5px solid var(--primary);padding:12px;font-size:15px}
+  .btn.small.ikincil{padding:10px 16px;font-size:14px}
+
+  /* ayarlar: kaynak ve kalem yönetimi */
+  .yon-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f1f6}
+  .yon-row:last-child{border-bottom:none}
+  .yon-row input{flex:1;min-width:0;padding:10px 12px}
+  .yon-row .yon-ico{font-size:20px;width:26px;text-align:center;flex-shrink:0}
+  .yon-say{font-size:12px;color:var(--text-2);white-space:nowrap;min-width:58px;text-align:right}
+  .yon-sil{background:none;border:1.5px solid #e3c4c4;color:var(--red);border-radius:10px;font-family:inherit;
+    font-weight:700;font-size:13px;padding:9px 10px;cursor:pointer;min-height:40px}
+  .yon-tasi{background:#fff6e0;border:1.5px solid #f0d089;border-radius:12px;padding:12px;margin:4px 0 10px;font-size:14px;line-height:1.45}
+  .yon-tasi select{margin:8px 0}
+  .yon-ekle{display:flex;gap:8px;margin-top:12px}
+  .yon-ekle input{flex:1;min-width:0}
+  #kaynakKart,#kalemKart{scroll-margin-top:84px}
 
   /* denge sayfası */
   .bal-eq{display:flex;align-items:center;justify-content:space-between;gap:4px;text-align:center}
@@ -215,10 +253,29 @@
       <button id="doInstall">Kur</button>
       <button class="bar-x" id="dismissInstall" title="Kapat">✕</button>
     </div>
+    <!-- Tek amaç: bu dönem para nereye gitti, nereden geldi. Sekme = aynı dönemin iki yüzü. -->
+    <div class="seg" id="homeSeg" role="tablist" aria-label="Ana sayfa görünümü">
+      <button data-v="gider" class="sel" role="tab" aria-selected="true">Giderler <span id="segGiderTut"></span></button>
+      <button data-v="gelir" role="tab" aria-selected="false">Gelirler <span id="segGelirTut"></span></button>
+    </div>
+
+    <div id="homeGelir" style="display:none">
     <div class="card acc-green">
       <div class="muted">Toplam Gelir</div>
       <div class="amount-lg"><span class="arrow-down">↓</span> <span id="homeIncome">₺0</span></div>
     </div>
+    <div class="card">
+      <div class="row-between"><h3>Gelir kaynakları</h3><span class="muted" id="kaynakSay"></span></div>
+      <div class="muted" style="margin:2px 0 4px">Kaynağa dokun, o kaynaktan gelen her ödemeyi gör. Ödemeye dokunursan düzenlersin.</div>
+      <div id="homeKaynaklar"></div>
+      <div class="alt-eylem">
+        <button class="btn ikincil" data-git="gelir-ekle">Gelir ekle</button>
+        <button class="btn ikincil" data-git="kaynaklar">Kaynakları düzenle</button>
+      </div>
+    </div>
+    </div>
+
+    <div id="homeGider">
     <div class="card">
       <div class="row-between">
         <h3>Aylık Gider Dağılımı</h3>
@@ -237,12 +294,17 @@
       </div>
     </div>
     <div class="card">
-      <div class="row-between"><h3>Aylık Sabit Giderler</h3><b id="fixedListTotal" style="font-size:15px">₺0</b></div>
-      <div id="homeFixedList" class="mini-list"></div>
+      <div class="row-between"><h3>Gider kalemleri</h3><b id="varListTotal" style="font-size:15px">₺0</b></div>
+      <div class="muted" style="margin:2px 0 4px">Değişken harcamalar, en çok harcanan kalem üstte. Kaleme dokun, harcamaları gör.</div>
+      <div id="homeVarList"></div>
+      <div class="alt-eylem">
+        <button class="btn ikincil" data-git="gider-ekle">Gider ekle</button>
+        <button class="btn ikincil" data-git="kalemler">Kalemleri düzenle</button>
+      </div>
     </div>
     <div class="card">
-      <div class="row-between"><h3>Değişken Harcamalar</h3><b id="varListTotal" style="font-size:15px">₺0</b></div>
-      <div id="homeVarList" class="mini-list"></div>
+      <div class="row-between"><h3>Aylık Sabit Giderler</h3><b id="fixedListTotal" style="font-size:15px">₺0</b></div>
+      <div id="homeFixedList" class="mini-list"></div>
     </div>
     <div class="card">
       <div class="row-between">
@@ -250,6 +312,7 @@
         <span class="muted" id="taksitCount"></span>
       </div>
       <div id="homeInstallments"></div>
+    </div>
     </div>
   </section>
 
@@ -419,6 +482,29 @@
       <div id="fixedList" style="margin-top:12px"></div>
     </div>
 
+    <!-- Kaynak ve kalem yönetimi: değişiklik anında kaydedilir; silmede kayıtlar kaybolmaz, başka yere taşınır. -->
+    <div class="card acc-green" id="kaynakKart">
+      <h3>Gelir kaynakları</h3>
+      <div class="muted">Adı değiştirince o kaynağın tüm kayıtları yeni adla görünür. Silerken kayıtları başka kaynağa taşırsın.</div>
+      <div id="kaynakYonet" style="margin-top:8px"></div>
+      <label class="fld" for="yeniKaynak">Yeni gelir kaynağı</label>
+      <div class="yon-ekle" style="margin-top:0">
+        <input type="text" id="yeniKaynak" maxlength="40" placeholder="Örn: TEV bursu">
+        <button class="btn small" id="kaynakEkle">Ekle</button>
+      </div>
+    </div>
+
+    <div class="card acc-red" id="kalemKart">
+      <h3>Gider kalemleri</h3>
+      <div class="muted">Harcamaların hangi başlıkta toplanacağını belirler. Ekstreden gelen kayıtlar da bu adlarla görünür.</div>
+      <div id="kalemYonet" style="margin-top:8px"></div>
+      <label class="fld" for="yeniKalem">Yeni gider kalemi</label>
+      <div class="yon-ekle" style="margin-top:0">
+        <input type="text" id="yeniKalem" maxlength="30" placeholder="Örn: Spor salonu">
+        <button class="btn small" id="kalemEkle">Ekle</button>
+      </div>
+    </div>
+
     <div class="card">
       <div class="row-between">
         <div>
@@ -510,17 +596,40 @@ const CATS = [
   {id:"beyaz",   name:"Beyaz eşya",        icon:"🧊"},
   {id:"diger",   name:"Diğer",             icon:"📦"},
 ];
-const catById = id => CATS.find(c=>c.id===id) || CATS[CATS.length-1];
+/* Gider kalemleri kullanıcınındır: Ayarlar'da eklenir, adı değişir, silinirken kayıtları başka kaleme taşınır.
+   Kullanıcı hiç dokunmadıysa settings.kalemler yoktur ve CATS geçerlidir. "diger" silinemez (son çare kalem). */
+const kalemler = () => (state.settings.kalemler && state.settings.kalemler.length) ? state.settings.kalemler : CATS;
+const catById = id => kalemler().find(c=>c.id===id) || kalemler().find(c=>c.id==="diger") || CATS[CATS.length-1];
 
-/* Gelir kategorisi serbest metindir (ör. kaynağın adı); eski kayıtlarda "gelir" yazar. */
+/* Gelir kategorisi serbest metindir: kaynağın adı. Eski kayıtlarda "gelir" yazar. */
 const INCOME_DEFAULTS = ["Burs","Aile","Maaş / staj","Ek gelir"];
 const incomeLabel = c => (!c || c==="gelir") ? "Diğer gelir" : c;
-/* En çok kullanılan kaynaklar önce; varsayılanlar yalnız boşluğu doldurur. En fazla 6 çip (seçim yükü). */
-function incomeLabels(){
+/* Ayarlar'da listelenen kaynaklar önce (kullanıcının sırası), kayıtlarda geçip listede olmayanlar ardından.
+   Liste hiç düzenlenmediyse varsayılanlar boşluğu doldurur. */
+function kaynakListesi(){
   const say = {};
   for(const t of state.transactions) if(t.type==="income"){ const l=incomeLabel(t.category); say[l]=(say[l]||0)+1; }
+  const kayitli = state.settings.kaynaklar;
   const used = Object.keys(say).sort((a,b)=>say[b]-say[a]);
-  return [...new Set([...used, ...INCOME_DEFAULTS])].slice(0, Math.max(4, Math.min(6, used.length)));
+  return [...new Set([...(kayitli||[]), ...used, ...(kayitli?[]:INCOME_DEFAULTS)])];
+}
+/* Yeniden adlandırılan ya da silinen kaynak/kalem, sonraki ekstre aktarımında eski adıyla geri gelmesin. */
+function esleUygula(t){
+  const e = state.settings.esle || {};
+  const tablo = t.type==="income" ? e.gelir : t.type==="expense" ? e.gider : null;
+  if(!tablo) return t;
+  let c = t.category, n = 0;
+  while(Object.prototype.hasOwnProperty.call(tablo,c) && n++<20) c = tablo[c];
+  t.category = c;
+  return t;
+}
+function esleYaz(tur, eski, yeni){
+  if(["__proto__","constructor","prototype"].includes(eski)) return;
+  const e = state.settings.esle = state.settings.esle || {};
+  const tablo = e[tur] = e[tur] || {};
+  for(const k of Object.keys(tablo)) if(tablo[k]===eski) tablo[k]=yeni;
+  delete tablo[yeni];                    // döngü olmasın
+  if(eski!==yeni) tablo[eski]=yeni;
 }
 
 /* Transfer: gelir de gider de değildir, toplamlara girmez. yon: "giris" (hesaba) | "cikis" (hesaptan) */
@@ -756,13 +865,34 @@ function renderHome(){
     ? fxItems.map(f=>`<div class="mini-row"><span>${esc(f.name||"—")}</span><b>${fmt(f.amount||0)}</b></div>`).join("")
     : '<div class="empty" style="padding:10px 0">Ayarlar\'dan sabit gider ekleyin (kira, fatura...).</div>';
 
-  // Değişken Harcamalar — kalem kalem liste (bu dönem)
-  const varItems = txs.filter(t=>t.type==="expense").slice().sort((a,b)=>b.date.localeCompare(a.date));
+  // Gider kalemleri: kaleme göre toplam, dokununca harcamalar (bu dönem)
   document.getElementById("varListTotal").textContent = fmt(variable);
-  document.getElementById("homeVarList").innerHTML = varItems.length
-    ? varItems.map(t=>{ const c=catById(t.category); const d=toDate(t.date);
-        return `<div class="mini-row"><span>${c.icon} ${esc(t.name)}${t.iade?' (iade)':''}<span class="mr-date">${d.getDate()} ${AYLAR[d.getMonth()].slice(0,3)}</span></span><b>${t.iade?'−':''}${fmt(t.amount)}</b></div>`; }).join("")
-    : '<div class="empty" style="padding:10px 0">Bu dönemde değişken harcama yok.</div>';
+  const gGrup = new Map();
+  for(const t of txs) if(t.type==="expense"){
+    const c=catById(t.category);
+    if(!gGrup.has(c.id)) gGrup.set(c.id,{icon:c.icon, ad:c.name, tutar:0, items:[]});
+    const g=gGrup.get(c.id); g.tutar+=expAmt(t); g.items.push(t);
+  }
+  document.getElementById("homeVarList").innerHTML = gGrup.size
+    ? grupHtml([...gGrup.values()], variable, "")
+    : '<div class="empty" style="padding:10px 0">Bu dönemde harcama yok. Ekle\'den gir ya da Ayarlar\'dan ekstre aktar.</div>';
+
+  // Gelir kaynakları: kaynağa göre toplam, dokununca ödemeler
+  const iGrup = new Map();
+  if(state.settings.monthlyIncome>0)
+    iGrup.set("\u0000sabit",{icon:"📌", ad:"Sabit aylık gelir", alt:"Ayarlar'da girilen tutar", tutar:state.settings.monthlyIncome, items:[]});
+  for(const t of txs) if(t.type==="income"){
+    const l=incomeLabel(t.category);
+    if(!iGrup.has(l)) iGrup.set(l,{icon:"💼", ad:l, tutar:0, items:[]});
+    const g=iGrup.get(l); g.tutar+=t.amount; g.items.push(t);
+  }
+  const kaynakSayisi = [...iGrup.keys()].filter(k=>k!=="\u0000sabit").length;
+  document.getElementById("kaynakSay").textContent = kaynakSayisi ? kaynakSayisi+" kaynak" : "";
+  document.getElementById("homeKaynaklar").innerHTML = iGrup.size
+    ? grupHtml([...iGrup.values()], income, "gelir")
+    : '<div class="empty" style="padding:10px 0">Bu dönemde gelir yok. Gelir ekle ile kaydet ya da Ayarlar\'dan ekstre aktar.</div>';
+  document.getElementById("segGiderTut").textContent = "· "+fmt(totalExp);
+  document.getElementById("segGelirTut").textContent = "· "+fmt(income);
 
   const box = document.getElementById("homeInstallments");
   document.getElementById("taksitCount").textContent = inst.length ? inst.length+" adet" : "";
@@ -779,12 +909,46 @@ function renderHome(){
     </div>`;
   }).join("");
 }
+/* Gruplu liste: en büyük üstte; özet satırı kapalı gelir (ilk bakışta 5-10 satır), içi işlemler. */
+function grupHtml(gruplar, toplam, tur){
+  return gruplar.sort((a,b)=>b.tutar-a.tutar).map(g=>{
+    const pay = toplam>0 ? Math.max(0,Math.round(g.tutar/toplam*100)) : 0;
+    const alt = g.alt || `${g.items.length} işlem · %${pay}`;
+    const satir = g.items.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(t=>{ const d=toDate(t.date);
+      return `<button class="mini-row mr-btn" data-edit="${t.id}" title="Düzenle"><span><span class="mr-tarih">${d.getDate()} ${AYLAR[d.getMonth()].slice(0,3)}</span>${esc(t.name)}${t.iade?' (iade)':''}</span><b>${t.iade?'−':''}${fmt(t.amount)}</b></button>`; }).join("");
+    const ozet = `<span class="g-ad">${g.icon} ${esc(g.ad)}</span><b class="g-tut">${fmt(g.tutar)}</b>
+      <span class="g-alt">${alt}</span><span class="g-bar ${tur}"><i style="width:${Math.min(100,pay)}%"></i></span>`;
+    return g.items.length
+      ? `<details class="grp"><summary>${ozet}</summary><div class="g-list">${satir}</div></details>`
+      : `<div class="grp"><div style="display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:11px 0 9px">${ozet}</div></div>`;
+  }).join("");
+}
+let homeView = "gider";
+function homeSekme(v){
+  homeView = v;
+  document.querySelectorAll("#homeSeg button").forEach(b=>{ const on=b.dataset.v===v;
+    b.classList.toggle("sel",on); b.setAttribute("aria-selected",on); });
+  document.getElementById("homeGider").style.display = v==="gider" ? "" : "none";
+  document.getElementById("homeGelir").style.display = v==="gelir" ? "" : "none";
+}
+document.getElementById("homeSeg").onclick=e=>{ const b=e.target.closest("button"); if(b) homeSekme(b.dataset.v); };
+document.getElementById("page-home").addEventListener("click",e=>{
+  const ed=e.target.closest("[data-edit]"); if(ed){ startEdit(ed.dataset.edit); return; }
+  const git=e.target.closest("[data-git]"); if(!git) return;
+  const g=git.dataset.git;
+  if(g==="gider-ekle"||g==="gelir-ekle"){ clearForm(); addType = g==="gelir-ekle"?"income":"expense"; showTypeCards(); goPage("add"); return; }
+  goPage("settings");
+  document.getElementById(g==="kaynaklar"?"kaynakKart":"kalemKart").scrollIntoView({block:"start"});
+});
 function esc(s){ return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
 
 /* ---------- EKLE / DÜZENLE ---------- */
 let addType="expense", addCat="market", editingId=null;
 const catChips=document.getElementById("catChips");
-catChips.innerHTML = CATS.map(c=>`<button class="chip${c.id===addCat?' sel':''}" data-c="${c.id}">${c.icon} ${c.name}</button>`).join("");
+function renderCatChips(){
+  catChips.innerHTML = kalemler().map(c=>`<button class="chip${c.id===addCat?' sel':''}" data-c="${c.id}">${c.icon} ${esc(c.name)}</button>`).join("");
+}
+renderCatChips();
 catChips.onclick=e=>{
   const b=e.target.closest(".chip"); if(!b) return;
   addCat=b.dataset.c;
@@ -802,7 +966,7 @@ function showTypeCards(){
 const incInput=document.getElementById("incomeSrc");
 function renderIncChips(){
   const cur=incInput.value.trim();
-  document.getElementById("incChips").innerHTML = incomeLabels().map(l=>
+  document.getElementById("incChips").innerHTML = kaynakListesi().map(l=>
     `<button class="chip${l===cur?' sel':''}" data-l="${esc(l)}">${esc(l)}</button>`).join("");
 }
 document.getElementById("incChips").onclick=e=>{
@@ -1004,6 +1168,8 @@ function renderSettings(){
   sdSel.value=state.settings.startDay;
   document.getElementById("monthlyIncome").value=state.settings.monthlyIncome||"";
   renderFixedList();
+  renderKaynakYonet();
+  renderKalemYonet();
   renderSecurity();
   renderBackupStat();
   renderImportStat();
@@ -1025,6 +1191,131 @@ function renderFixedList(){
     state.settings.fixedExpenses.splice(+b.dataset.rm,1); renderFixedList();
   });
 }
+/* ---------- GELİR KAYNAKLARI ve GİDER KALEMLERİ ----------
+   Değişiklik anında kaydedilir. Kayıt silinmez: silinen kaynağın/kalemin kayıtları seçilen yere taşınır,
+   eşleme yazılır ki sonraki ekstre aktarımı eski adı geri getirmesin. */
+const kaynakSay = l => state.transactions.filter(t=>t.type==="income" && incomeLabel(t.category)===l).length;
+const kalemSay  = id => state.transactions.filter(t=>t.type==="expense" && catById(t.category).id===id).length;
+let tasiAcik = null;   // {tur:"kaynak"|"kalem", ad} : taşıma paneli açık olan satır
+
+function yonetimSonrasi(mesaj){
+  save(); renderKaynakYonet(); renderKalemYonet(); renderCatChips(); renderIncChips(); toast(mesaj);
+}
+function kaynakTasi(eski, hedef, sil){
+  for(const t of state.transactions)
+    if(t.type==="income" && incomeLabel(t.category)===eski) t.category = hedef;
+  let liste = kaynakListesi().map(l=>l===eski ? hedef : l);
+  if(sil) liste = liste.filter(l=>l!==eski);
+  state.settings.kaynaklar = [...new Set(liste)];
+  esleYaz("gelir", eski, hedef);
+  if(eski==="Diğer gelir") esleYaz("gelir", "gelir", hedef);
+}
+function renderKaynakYonet(){
+  const box=document.getElementById("kaynakYonet"); if(!box) return;
+  const liste=kaynakListesi();
+  box.innerHTML = liste.map((l,i)=>{
+    const n=kaynakSay(l), acik = tasiAcik && tasiAcik.tur==="kaynak" && tasiAcik.ad===l;
+    const digerleri = liste.filter(x=>x!==l);
+    return `<div class="yon-row">
+      <span class="yon-ico" aria-hidden="true">💼</span>
+      <input type="text" maxlength="40" value="${esc(l)}" data-kaynak="${i}" aria-label="${esc(l)} kaynağının adı">
+      <span class="yon-say">${n} kayıt</span>
+      <button class="yon-sil" data-kaynak-sil="${i}">Sil</button>
+    </div>` + (acik ? `<div class="yon-tasi">
+      <b>${esc(l)}</b> kaynağında ${n} kayıt var. Kayıtlar silinmez, seçtiğin kaynağa taşınır.
+      <select data-tasi-hedef aria-label="Kayıtların taşınacağı kaynak">${digerleri.map(x=>`<option>${esc(x)}</option>`).join("")}</select>
+      <div class="row-between"><button class="btn small" data-tasi-onay="kaynak">Taşı ve sil</button>
+      <button class="btn small ikincil" data-tasi-vazgec>Vazgeç</button></div></div>` : "");
+  }).join("") || '<div class="empty" style="padding:10px 0">Henüz kaynak yok. Aşağıdan ekle.</div>';
+}
+function renderKalemYonet(){
+  const box=document.getElementById("kalemYonet"); if(!box) return;
+  const liste=kalemler();
+  box.innerHTML = liste.map(c=>{
+    const n=kalemSay(c.id), acik = tasiAcik && tasiAcik.tur==="kalem" && tasiAcik.ad===c.id;
+    return `<div class="yon-row">
+      <span class="yon-ico" aria-hidden="true">${c.icon}</span>
+      <input type="text" maxlength="30" value="${esc(c.name)}" data-kalem="${c.id}" aria-label="${esc(c.name)} kaleminin adı">
+      <span class="yon-say">${n} kayıt</span>
+      ${c.id==="diger" ? '<span class="yon-say" style="min-width:52px">silinmez</span>' : `<button class="yon-sil" data-kalem-sil="${c.id}">Sil</button>`}
+    </div>` + (acik ? `<div class="yon-tasi">
+      <b>${esc(c.name)}</b> kaleminde ${n} kayıt var. Kayıtlar silinmez, seçtiğin kaleme taşınır.
+      <select data-tasi-hedef aria-label="Kayıtların taşınacağı kalem">${liste.filter(x=>x.id!==c.id).map(x=>`<option value="${x.id}"${x.id==="diger"?" selected":""}>${x.icon} ${esc(x.name)}</option>`).join("")}</select>
+      <div class="row-between"><button class="btn small" data-tasi-onay="kalem">Taşı ve sil</button>
+      <button class="btn small ikincil" data-tasi-vazgec>Vazgeç</button></div></div>` : "");
+  }).join("");
+}
+const kalemListesiKopya = () => kalemler().map(c=>({id:c.id, name:c.name, icon:c.icon}));
+
+document.getElementById("kaynakYonet").addEventListener("change",e=>{
+  const inp=e.target.closest("[data-kaynak]"); if(!inp) return;
+  const eski=kaynakListesi()[+inp.dataset.kaynak], yeni=inp.value.trim().slice(0,40);
+  if(!yeni){ inp.value=eski; toast("Kaynağın adı boş olamaz."); return; }
+  if(yeni===eski) return;
+  const birlesir = kaynakListesi().includes(yeni);
+  if(birlesir && !confirm(`"${yeni}" adlı bir kaynak zaten var. "${eski}" kayıtları onunla birleşsin mi?`)){ inp.value=eski; return; }
+  kaynakTasi(eski, yeni, birlesir);
+  yonetimSonrasi(birlesir ? `"${eski}" kayıtları "${yeni}" ile birleşti ✓` : `Kaynak adı "${yeni}" oldu ✓`);
+});
+document.getElementById("kalemYonet").addEventListener("change",e=>{
+  const inp=e.target.closest("[data-kalem]"); if(!inp) return;
+  const liste=kalemListesiKopya(), c=liste.find(x=>x.id===inp.dataset.kalem);
+  const yeni=inp.value.trim().slice(0,30);
+  if(!yeni){ inp.value=c.name; toast("Kalemin adı boş olamaz."); return; }
+  if(liste.some(x=>x.id!==c.id && x.name.toLocaleLowerCase("tr")===yeni.toLocaleLowerCase("tr"))){
+    inp.value=c.name; toast(`"${yeni}" adlı bir kalem zaten var. Birleştirmek için bu kalemi sil, kayıtlarını ona taşı.`); return; }
+  c.name=yeni; state.settings.kalemler=liste;
+  yonetimSonrasi(`Kalem adı "${yeni}" oldu ✓`);
+});
+function yonetimTik(e){
+  const ks=e.target.closest("[data-kaynak-sil]"), cs=e.target.closest("[data-kalem-sil]");
+  if(ks){ const l=kaynakListesi()[+ks.dataset.kaynakSil];
+    if(kaynakSay(l)){ tasiAcik={tur:"kaynak", ad:l}; renderKaynakYonet(); return; }
+    state.settings.kaynaklar = kaynakListesi().filter(x=>x!==l);
+    yonetimSonrasi(`"${l}" silindi (kaydı yoktu)`); return; }
+  if(cs){ const id=cs.dataset.kalemSil;
+    if(kalemSay(id)){ tasiAcik={tur:"kalem", ad:id}; renderKalemYonet(); return; }
+    const ad=catById(id).name;
+    state.settings.kalemler = kalemListesiKopya().filter(x=>x.id!==id);
+    yonetimSonrasi(`"${ad}" silindi (kaydı yoktu)`); return; }
+  if(e.target.closest("[data-tasi-vazgec]")){ tasiAcik=null; renderKaynakYonet(); renderKalemYonet(); return; }
+  const on=e.target.closest("[data-tasi-onay]"); if(!on || !tasiAcik) return;
+  const hedef=on.closest(".yon-tasi").querySelector("[data-tasi-hedef]").value;
+  if(!hedef){ toast("Taşınacak başka yer yok. Önce aşağıdan yenisini ekle."); return; }
+  const t=tasiAcik; tasiAcik=null;
+  if(t.tur==="kaynak"){ const n=kaynakSay(t.ad); kaynakTasi(t.ad, hedef, true);
+    yonetimSonrasi(`"${t.ad}" silindi, ${n} kayıt "${hedef}" kaynağına taşındı ✓`); return; }
+  const ad=catById(t.ad).name, n=kalemSay(t.ad);
+  for(const x of state.transactions) if(x.type==="expense" && catById(x.category).id===t.ad) x.category=hedef;
+  state.settings.kalemler = kalemListesiKopya().filter(x=>x.id!==t.ad);
+  esleYaz("gider", t.ad, hedef);
+  yonetimSonrasi(`"${ad}" silindi, ${n} kayıt "${catById(hedef).name}" kalemine taşındı ✓`);
+}
+document.getElementById("kaynakYonet").addEventListener("click",yonetimTik);
+document.getElementById("kalemYonet").addEventListener("click",yonetimTik);
+function yeniEkle(inpId, ekle){
+  const inp=document.getElementById(inpId), ad=inp.value.trim();
+  if(!ad){ toast("Önce adını yaz."); inp.focus(); return; }
+  if(ekle(ad)===false) return;
+  inp.value="";
+}
+document.getElementById("kaynakEkle").onclick=()=>yeniEkle("yeniKaynak", ad=>{
+  if(kaynakListesi().includes(ad)){ toast(`"${ad}" zaten listede.`); return false; }
+  state.settings.kaynaklar=[...kaynakListesi(), ad.slice(0,40)];
+  yonetimSonrasi(`"${ad}" gelir kaynağı eklendi ✓`);
+});
+document.getElementById("kalemEkle").onclick=()=>yeniEkle("yeniKalem", ad=>{
+  const liste=kalemListesiKopya();
+  if(liste.some(x=>x.name.toLocaleLowerCase("tr")===ad.toLocaleLowerCase("tr"))){ toast(`"${ad}" zaten listede.`); return false; }
+  // "diger" hep sonda kalsın: yeni kalem onun önüne girer
+  const i=liste.findIndex(x=>x.id==="diger");
+  liste.splice(i<0?liste.length:i, 0, {id:"k-"+Date.now().toString(36), name:ad.slice(0,30), icon:"🏷️"});
+  state.settings.kalemler=liste;
+  yonetimSonrasi(`"${ad}" gider kalemi eklendi ✓`);
+});
+["yeniKaynak","yeniKalem"].forEach(id=>document.getElementById(id).addEventListener("keydown",e=>{
+  if(e.key==="Enter") document.getElementById(id==="yeniKaynak"?"kaynakEkle":"kalemEkle").click(); }));
+
 document.getElementById("addFixed").onclick=()=>{
   state.settings.fixedExpenses.push({name:"",amount:0});
   renderFixedList();
@@ -1061,7 +1352,25 @@ function sanitizeSettings(s){
     name  : String((f && f.name) || "").slice(0,80),
     amount: (f && isFinite(Number(f.amount)) && Number(f.amount)>=0) ? Number(f.amount) : 0
   })).filter(f=>f.name.trim() || f.amount).slice(0,300);
-  return { startDay:sd, monthlyIncome:mi, fixedExpenses:fx };
+  const out = { startDay:sd, monthlyIncome:mi, fixedExpenses:fx };
+  const metin = (v,n) => String(v==null?"":v).trim().slice(0,n);
+  if(Array.isArray(s.kalemler)){
+    const ids=new Set(), k=[];
+    for(const c of s.kalemler.slice(0,100)){ const id=metin(c&&c.id,40), name=metin(c&&c.name,30);
+      if(!id || !name || ids.has(id)) continue; ids.add(id); k.push({id, name, icon:metin(c.icon,8)||"🏷️"}); }
+    if(!ids.has("diger")) k.push({...CATS[CATS.length-1]});
+    out.kalemler = k;
+  }
+  if(Array.isArray(s.kaynaklar)) out.kaynaklar = [...new Set(s.kaynaklar.map(x=>metin(x,40)).filter(Boolean))].slice(0,100);
+  if(s.esle && typeof s.esle==="object"){
+    const esle = {};
+    for(const tur of ["gelir","gider"]){ const t=s.esle[tur]; if(!t || typeof t!=="object") continue;
+      esle[tur] = Object.create(null);
+      for(const [a,b] of Object.entries(t).slice(0,500)){ const aa=metin(a,40), bb=metin(b,40); if(aa && bb && aa!==bb) esle[tur][aa]=bb; }
+    }
+    out.esle = esle;
+  }
+  return out;
 }
 function sanitizeTx(arr){
   const out=[], seen=new Set();
@@ -1175,7 +1484,7 @@ document.getElementById("importFile").onchange=async e=>{
                                              : "Bu dosya bir ekstre aktarım dosyası değil.");
     return;
   }
-  const gelen = sanitizeTx(obj.islemler.filter(t=>t && t.extId));
+  const gelen = sanitizeTx(obj.islemler.filter(t=>t && t.extId)).map(esleUygula);
   const mevcut = new Map(state.transactions.filter(t=>t.extId).map(t=>[t.extId,t]));
   const yeni = gelen.filter(t=>!mevcut.has(t.extId));
   // Motorda kategorisi düzeltilmiş kayıtlar güncellenir; uygulamada elle düzenlenenlere dokunulmaz.
