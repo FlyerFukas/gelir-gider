@@ -464,13 +464,6 @@
       <select id="startDay"></select>
     </div>
 
-    <div class="card acc-green">
-      <h3>Sabit Aylık Gelir</h3>
-      <div class="muted">Maaş veya düzenli diğer gelirlerinizi girin.</div>
-      <label class="fld">Aylık Gelir (₺)</label>
-      <input type="number" id="monthlyIncome" inputmode="decimal" min="0" placeholder="0.00">
-    </div>
-
     <div class="card acc-red">
       <div class="row-between">
         <div>
@@ -650,12 +643,13 @@ function catInfo(t){
 const expAmt = t => t.iade ? -t.amount : t.amount;
 
 function defaults(){
-  return { settings:{startDay:1, monthlyIncome:0, fixedExpenses:[]},
+  return { settings:{startDay:1, fixedExpenses:[]},
            security:{enabled:false, salt:"", hash:"", len:0},
            transactions:[], rev:0 };
 }
 function normalize(o){
   o = o || {}; const d = defaults();
+  if(o.settings) delete o.settings.monthlyIncome;   // kaldırıldı: gelir yalnız kaynaklardan (işlemlerden) gelir
   return {
     settings: Object.assign(d.settings, o.settings||{}),
     security: Object.assign(d.security, o.security||{}),
@@ -785,7 +779,7 @@ function txInPeriod(pStart){
 /* Bir dönemin özeti: Denge kartı ve aylar arası grafikler aynı hesabı kullanır. */
 function periodSummary(pStart){
   const txs = txInPeriod(pStart), inst = installmentsInPeriod(pStart);
-  const income = (state.settings.monthlyIncome||0) + txs.filter(t=>t.type==="income").reduce((a,t)=>a+t.amount,0);
+  const income = txs.filter(t=>t.type==="income").reduce((a,t)=>a+t.amount,0);
   const fixedBase = state.settings.fixedExpenses.reduce((a,f)=>a+(f.amount||0),0);
   const byCat = {};
   if(fixedBase) byCat.sabit = fixedBase;
@@ -838,7 +832,7 @@ function renderHome(){
   const inst = installmentsInPeriod(viewStart);
 
   const extraIncome = txs.filter(t=>t.type==="income").reduce((a,t)=>a+t.amount,0);
-  const income = (state.settings.monthlyIncome||0) + extraIncome;
+  const income = extraIncome;
   const fixedBase = state.settings.fixedExpenses.reduce((a,f)=>a+(f.amount||0),0);
   const fixedInst = inst.reduce((a,i)=>a+i.monthly,0);
   const fixed = fixedBase + fixedInst;
@@ -879,14 +873,12 @@ function renderHome(){
 
   // Gelir kaynakları: kaynağa göre toplam, dokununca ödemeler
   const iGrup = new Map();
-  if(state.settings.monthlyIncome>0)
-    iGrup.set("\u0000sabit",{icon:"📌", ad:"Sabit aylık gelir", alt:"Ayarlar'da girilen tutar", tutar:state.settings.monthlyIncome, items:[]});
   for(const t of txs) if(t.type==="income"){
     const l=incomeLabel(t.category);
     if(!iGrup.has(l)) iGrup.set(l,{icon:"💼", ad:l, tutar:0, items:[]});
     const g=iGrup.get(l); g.tutar+=t.amount; g.items.push(t);
   }
-  const kaynakSayisi = [...iGrup.keys()].filter(k=>k!=="\u0000sabit").length;
+  const kaynakSayisi = iGrup.size;
   document.getElementById("kaynakSay").textContent = kaynakSayisi ? kaynakSayisi+" kaynak" : "";
   document.getElementById("homeKaynaklar").innerHTML = iGrup.size
     ? grupHtml([...iGrup.values()], income, "gelir")
@@ -1166,7 +1158,6 @@ const sdSel=document.getElementById("startDay");
 sdSel.innerHTML=Array.from({length:28},(_,i)=>`<option value="${i+1}">Her ayın ${i+1}'i</option>`).join("");
 function renderSettings(){
   sdSel.value=state.settings.startDay;
-  document.getElementById("monthlyIncome").value=state.settings.monthlyIncome||"";
   renderFixedList();
   renderKaynakYonet();
   renderKalemYonet();
@@ -1324,7 +1315,6 @@ document.getElementById("addFixed").onclick=()=>{
 };
 document.getElementById("saveSettings").onclick=()=>{
   state.settings.startDay=+sdSel.value;
-  state.settings.monthlyIncome=parseFloat(document.getElementById("monthlyIncome").value)||0;
   state.settings.fixedExpenses=state.settings.fixedExpenses.filter(f=>f.name.trim()||f.amount);
   save();
   viewStart=periodStartFor(new Date());
@@ -1347,12 +1337,11 @@ document.getElementById("resetData").onclick=async ()=>{
 function sanitizeSettings(s){
   s = (s && typeof s==="object") ? s : {};
   let sd = Math.round(Number(s.startDay));  if(!(sd>=1 && sd<=28)) sd=1;
-  let mi = Number(s.monthlyIncome);         if(!isFinite(mi) || mi<0) mi=0;
   const fx = (Array.isArray(s.fixedExpenses)?s.fixedExpenses:[]).map(f=>({
     name  : String((f && f.name) || "").slice(0,80),
     amount: (f && isFinite(Number(f.amount)) && Number(f.amount)>=0) ? Number(f.amount) : 0
   })).filter(f=>f.name.trim() || f.amount).slice(0,300);
-  const out = { startDay:sd, monthlyIncome:mi, fixedExpenses:fx };
+  const out = { startDay:sd, fixedExpenses:fx };
   const metin = (v,n) => String(v==null?"":v).trim().slice(0,n);
   if(Array.isArray(s.kalemler)){
     const ids=new Set(), k=[];
@@ -1443,7 +1432,7 @@ document.getElementById("restoreFile").onchange=async e=>{
   const yeniAyar = sanitizeSettings(obj.settings);
   const yeniTx   = sanitizeTx(obj.transactions);
   const atilan   = (Array.isArray(obj.transactions)?obj.transactions.length:0) - yeniTx.length;
-  if(!yeniTx.length && !yeniAyar.fixedExpenses.length && !yeniAyar.monthlyIncome){
+  if(!yeniTx.length && !yeniAyar.fixedExpenses.length){
     toast("Yedek boş görünüyor — geri yükleme yapılmadı."); return;
   }
   const uyari = `Yedek içeriği:\n• ${yeniTx.length} işlem\n• ${yeniAyar.fixedExpenses.length} sabit gider`
@@ -1536,7 +1525,7 @@ function renderBalance(){
   const txs = txInPeriod(viewStart);
   const inst = installmentsInPeriod(viewStart);
   const extraIncome = txs.filter(t=>t.type==="income").reduce((a,t)=>a+t.amount,0);
-  const income = (state.settings.monthlyIncome||0) + extraIncome;
+  const income = extraIncome;
   const fixedBase = state.settings.fixedExpenses.reduce((a,f)=>a+(f.amount||0),0);
   const instSum = inst.reduce((a,i)=>a+i.monthly,0);
   const variable = txs.filter(t=>t.type==="expense").reduce((a,t)=>a+expAmt(t),0);
@@ -1566,7 +1555,7 @@ function renderBalance(){
   card.classList.toggle("acc-green", net>=0);
   card.classList.toggle("acc-red", net<0);
   const adv=document.getElementById("balAdvice");
-  if(income<=0) adv.textContent = "Gelir girilmemiş. Ayarlar'dan aylık gelirini ekleyerek dengeyi görebilirsin.";
+  if(income<=0) adv.textContent = "Bu dönemde gelir yok. Ekle → Gelir ile kaydet ya da Ayarlar'dan ekstre aktar, denge burada görünür.";
   else if(net<0) adv.textContent = "Bu dönem gelirinden fazla harcama var. Değişken harcamaları gözden geçir.";
   else if(pct>85) adv.textContent = "Gelirinin çoğunu harcadın, dikkatli ol.";
   else adv.textContent = "Bütçen dengede görünüyor 👍";
