@@ -1647,7 +1647,20 @@ document.getElementById("importFile").onchange=async e=>{
   const degisen = gelen.filter(t=>{ const m=mevcut.get(t.extId);
     return m && !m.elle && ALAN.some(k=>(m[k]??null)!==(t[k]??null)); });
   const ayni = gelen.length - yeni.length - degisen.length;
-  if(!yeni.length && !degisen.length){ toast(`Değişiklik yok: ${ayni} işlemin hepsi zaten güncel.`); return; }
+  const gunAyar = Math.round(Number(obj.baslangicGunu));
+  // Dönem başlangıcı ekstre motoruyla aynı olsun; işlem değişmese de sorulur (motorun günü değişmiş olabilir).
+  const gunuSor = () => {
+    if(gunAyar>=1 && gunAyar<=28 && gunAyar!==state.settings.startDay &&
+       confirm(`Ekstre dönemi her ayın ${gunAyar}. günü başlıyor, uygulamanınki her ayın ${state.settings.startDay}. günü.\nDönem başlangıcı her ayın ${gunAyar}. günü olsun mu? (Sonra Ayarlar'dan değiştirebilirsin.)`)){
+      state.settings.startDay = gunAyar; return true;
+    }
+    return false;
+  };
+  if(!yeni.length && !degisen.length){
+    if(gunuSor()){ save(); viewStart = periodStartFor(new Date()); renderSettings(); toast(`İşlemler zaten güncel. Dönem artık her ayın ${gunAyar}. günü başlıyor ✓`); }
+    else toast(`Değişiklik yok: ${ayni} işlemin hepsi zaten güncel.`);
+    return;
+  }
   const say = tip => yeni.filter(t=>t.type===tip).length;
   const gun = s => { const d=toDate(s); return d.getDate()+" "+AYLAR[d.getMonth()]+" "+d.getFullYear(); };
   let mesaj = "";
@@ -1665,11 +1678,7 @@ document.getElementById("importFile").onchange=async e=>{
   const id = "akt-"+Date.now();
   for(const t of yeni){ t.aktarim=id; state.transactions.push(t); }
   if(yeni.length) state.settings.sonAktarim = {id, tarih:new Date().toISOString()};
-  const gunAyar = Math.round(Number(obj.baslangicGunu));
-  if(gunAyar>=1 && gunAyar<=28 && gunAyar!==state.settings.startDay &&
-     confirm(`Ekstre dönemleri ayın ${gunAyar}'unda başlıyor, uygulamanınki ayın ${state.settings.startDay}'inde.\nDönem başlangıcını ayın ${gunAyar}'u yapalım mı? (Sonra Ayarlar'dan değiştirebilirsin.)`)){
-    state.settings.startDay = gunAyar;
-  }
+  gunuSor();
   save();
   viewStart = periodStartFor(new Date());
   toast([yeni.length && `${yeni.length} işlem eklendi`, degisen.length && `${degisen.length} işlem güncellendi`].filter(Boolean).join(", ")+" ✓");
