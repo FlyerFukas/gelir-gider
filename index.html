@@ -155,6 +155,10 @@
   .legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:13px;color:var(--text-2)}
   .legend b{color:var(--text);margin-left:5px}
   .dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:5px}
+  .seg-sabitg{background:#0e7a3c;height:100%;transition:width .3s}
+  .seg-anlik{background:#6fcf8f;height:100%;transition:width .3s}
+  .dot-sabitg{background:#0e7a3c}.dot-anlik{background:#6fcf8f}
+  .g-bek{color:#9a6400;font-weight:700}
   .dot-fixed{background:#c62828}.dot-inst{background:#7a5af0}.dot-var{background:#e8912a}
 
   /* ana sayfa küçük puntolu gider listeleri */
@@ -202,7 +206,13 @@
   .yon-tasi select{margin:8px 0}
   .yon-ekle{display:flex;gap:8px;margin-top:12px}
   .yon-ekle input{flex:1;min-width:0}
-  #kaynakKart,#kalemKart{scroll-margin-top:84px}
+  #kaynakKart,#kalemKart,#sabitGelirKart{scroll-margin-top:84px}
+  .sg-row{padding:8px 0 10px;border-bottom:1px solid #f0f1f6}
+  .sg-row:last-child{border-bottom:none}
+  .sg-ust{display:flex;gap:8px;align-items:center}
+  .sg-ust input.sg-kaynak{flex:1;min-width:0;padding:10px 12px}
+  .sg-ust input.sg-tutar{flex:0 0 96px;min-width:0;padding:10px 10px}
+  .sg-alt{font-size:12px;color:var(--text-2);margin:4px 0 0 2px;line-height:1.45}
 
   /* denge sayfası */
   .bal-eq{display:flex;align-items:center;justify-content:space-between;gap:4px;text-align:center}
@@ -261,12 +271,21 @@
 
     <div id="homeGelir" style="display:none">
     <div class="card acc-green">
-      <div class="muted">Toplam Gelir</div>
-      <div class="amount-lg"><span class="arrow-down">↓</span> <span id="homeIncome">₺0</span></div>
+      <div class="row-between"><h3>Aylık Gelir Dağılımı</h3><b id="homeIncome" style="font-size:18px">₺0</b></div>
+      <div class="muted" style="margin:2px 0 10px">Sabit: her ay beklediğin gelir (kira, maaş, burs). Tek seferlik: ara sıra gelen.</div>
+      <div class="stackbar">
+        <div class="seg-sabitg" id="segSabitG"></div>
+        <div class="seg-anlik" id="segAnlik"></div>
+      </div>
+      <div class="legend">
+        <span><i class="dot dot-sabitg"></i>Sabit<b id="legSabitG">₺0</b></span>
+        <span><i class="dot dot-anlik"></i>Tek seferlik<b id="legAnlik">₺0</b></span>
+      </div>
+      <div class="muted" id="gelirBekleyen" style="margin-top:8px"></div>
     </div>
     <div class="card">
       <div class="row-between"><h3>Gelir kaynakları</h3><span class="muted" id="kaynakSay"></span></div>
-      <div class="muted" style="margin:2px 0 4px">Kaynağa dokun, o kaynaktan gelen her ödemeyi gör. Ödemeye dokunursan düzenlersin.</div>
+      <div class="muted" style="margin:2px 0 4px">📌 sabit gelir. Kaynağa dokun, gelen her ödemeyi gör. Ödemeye dokunursan düzenlersin.</div>
       <div id="homeKaynaklar"></div>
       <div class="alt-eylem">
         <button class="btn ikincil" data-git="gelir-ekle">Gelir ekle</button>
@@ -399,6 +418,14 @@
       <div class="chips" id="incChips"></div>
       <input type="text" id="incomeSrc" maxlength="40" style="margin-top:10px" aria-describedby="incomeSrcHelp">
       <div class="muted" id="incomeSrcHelp" style="margin-top:6px">Listede yoksa kaynağın adını yaz (ör. burs veren vakıf).</div>
+      <div id="sikBox">
+        <label class="fld">Ne sıklıkla?</label>
+        <div class="seg" id="sikSeg" style="margin-bottom:6px">
+          <button data-s="bir" class="sel">Bir kez</button>
+          <button data-s="ay">Her ay (sabit)</button>
+        </div>
+        <div class="muted" id="sikHelp">Ara sıra gelen para: hediye, iade, tek seferlik iş.</div>
+      </div>
     </div>
 
     <div class="card" id="transferCard" style="display:none">
@@ -411,7 +438,7 @@
     </div>
 
     <div class="card">
-      <label class="fld" style="margin-top:0">İşlem Tarihi</label>
+      <label class="fld" style="margin-top:0" for="addDate" id="dateLabel">İşlem Tarihi</label>
       <input type="date" id="addDate">
     </div>
 
@@ -476,6 +503,18 @@
     </div>
 
     <!-- Kaynak ve kalem yönetimi: değişiklik anında kaydedilir; silmede kayıtlar kaybolmaz, başka yere taşınır. -->
+    <div class="card acc-green" id="sabitGelirKart">
+      <div class="row-between">
+        <div>
+          <h3>Sabit Aylık Gelirler</h3>
+          <div class="muted">Kira, maaş, burs gibi her ay gelen para. Gerçek ödeme gelince onun yerine geçer, çift sayılmaz.</div>
+        </div>
+        <button class="icon-btn" id="addSabitGelir" title="Sabit gelir ekle" aria-label="Sabit gelir ekle" style="color:var(--primary);font-size:26px">⊕</button>
+      </div>
+      <div id="sabitGelirList" style="margin-top:8px"></div>
+      <datalist id="kaynakDl"></datalist>
+    </div>
+
     <div class="card acc-green" id="kaynakKart">
       <h3>Gelir kaynakları</h3>
       <div class="muted">Adı değiştirince o kaynağın tüm kayıtları yeni adla görünür. Silerken kayıtları başka kaynağa taşırsın.</div>
@@ -604,7 +643,8 @@ function kaynakListesi(){
   for(const t of state.transactions) if(t.type==="income"){ const l=incomeLabel(t.category); say[l]=(say[l]||0)+1; }
   const kayitli = state.settings.kaynaklar;
   const used = Object.keys(say).sort((a,b)=>say[b]-say[a]);
-  return [...new Set([...(kayitli||[]), ...used, ...(kayitli?[]:INCOME_DEFAULTS)])];
+  const sabit = (state.settings.sabitGelirler||[]).map(s=>s.kaynak).filter(Boolean);
+  return [...new Set([...(kayitli||[]), ...used, ...sabit, ...(kayitli?[]:INCOME_DEFAULTS)])];
 }
 /* Yeniden adlandırılan ya da silinen kaynak/kalem, sonraki ekstre aktarımında eski adıyla geri gelmesin. */
 function esleUygula(t){
@@ -776,10 +816,35 @@ function txInPeriod(pStart){
   });
 }
 
+/* Sabit gelir = her ay beklenen gelir (kira, maaş, burs). Başladığı tarihten (bas) bitirildiği tarihe (bit) kadar
+   her dönem sayılır. O dönemde aynı kaynaktan gerçek bir gelir kaydı (ekstre ya da elle) varsa sabit tutar
+   sayılmaz, gerçek kayıt geçer: çift sayım olmaz. Biten bir dönemde hiç gelmediyse "gelmedi" olur ve sayılmaz
+   (geçmiş, gerçekleşmeyen parayla şişmesin); bu ve sonraki dönemlerde "bekleniyor" olarak toplama girer. */
+const sabitGelirler = () => state.settings.sabitGelirler || [];
+function sabitAktif(s, pStart){
+  const pSon = periodEnd(pStart);
+  return s.kaynak && s.tutar>0 && toDate(s.bas)<=pSon && (!s.bit || toDate(s.bit)>=pStart);
+}
+function gelirOzeti(pStart){
+  const txs = txInPeriod(pStart).filter(t=>t.type==="income");
+  const gelen = {};
+  for(const t of txs){ const l=incomeLabel(t.category); gelen[l]=(gelen[l]||0)+t.amount; }
+  const gecmis = periodEnd(pStart) < periodStartFor(new Date());
+  const sabit = sabitGelirler().filter(s=>sabitAktif(s,pStart))
+                 .map(s=>{ const geldi = gelen[s.kaynak]>0;
+                   return {...s, geldi, gelmedi: !geldi && gecmis, gelenTutar: gelen[s.kaynak]||0}; });
+  const sabitKaynak = new Set(sabit.map(s=>s.kaynak));
+  const bekleyen = sabit.filter(s=>!s.geldi && !s.gelmedi).reduce((a,s)=>a+s.tutar,0);
+  const gercek = txs.reduce((a,t)=>a+t.amount,0);
+  const sabitGercek = txs.filter(t=>sabitKaynak.has(incomeLabel(t.category))).reduce((a,t)=>a+t.amount,0);
+  return { txs, sabit, sabitKaynak, bekleyen, toplam: gercek+bekleyen,
+           sabitToplam: sabitGercek+bekleyen, anlikToplam: gercek-sabitGercek };
+}
+
 /* Bir dönemin özeti: Denge kartı ve aylar arası grafikler aynı hesabı kullanır. */
 function periodSummary(pStart){
   const txs = txInPeriod(pStart), inst = installmentsInPeriod(pStart);
-  const income = txs.filter(t=>t.type==="income").reduce((a,t)=>a+t.amount,0);
+  const income = gelirOzeti(pStart).toplam;
   const fixedBase = state.settings.fixedExpenses.reduce((a,f)=>a+(f.amount||0),0);
   const byCat = {};
   if(fixedBase) byCat.sabit = fixedBase;
@@ -831,8 +896,8 @@ function renderHome(){
   const txs = txInPeriod(viewStart);
   const inst = installmentsInPeriod(viewStart);
 
-  const extraIncome = txs.filter(t=>t.type==="income").reduce((a,t)=>a+t.amount,0);
-  const income = extraIncome;
+  const gOz = gelirOzeti(viewStart);
+  const income = gOz.toplam;
   const fixedBase = state.settings.fixedExpenses.reduce((a,f)=>a+(f.amount||0),0);
   const fixedInst = inst.reduce((a,i)=>a+i.monthly,0);
   const fixed = fixedBase + fixedInst;
@@ -871,13 +936,28 @@ function renderHome(){
     ? grupHtml([...gGrup.values()], variable, "")
     : '<div class="empty" style="padding:10px 0">Bu dönemde harcama yok. Ekle\'den gir ya da Ayarlar\'dan ekstre aktar.</div>';
 
-  // Gelir kaynakları: kaynağa göre toplam, dokununca ödemeler
+  // Gelir dağılımı: sabit (beklenen) ve tek seferlik
+  const gPct = v => (income>0 ? v/income*100 : 0)+"%";
+  document.getElementById("segSabitG").style.width = gPct(gOz.sabitToplam);
+  document.getElementById("segAnlik").style.width  = gPct(gOz.anlikToplam);
+  document.getElementById("legSabitG").textContent = fmt(gOz.sabitToplam);
+  document.getElementById("legAnlik").textContent  = fmt(gOz.anlikToplam);
+  const bek = gOz.sabit.filter(s=>!s.geldi && !s.gelmedi), gelmeyen = gOz.sabit.filter(s=>s.gelmedi);
+  document.getElementById("gelirBekleyen").textContent = bek.length
+    ? `${fmt(gOz.bekleyen)} henüz gelmedi (${bek.map(s=>s.kaynak).join(", ")}). Gelince ekstreden ya da Ekle'den kaydı yeterli, çift sayılmaz.`
+    : gelmeyen.length ? `Bu dönem beklenip gelmeyen: ${gelmeyen.map(s=>s.kaynak+" "+fmt(s.tutar)).join(", ")}. Toplama katılmadı.` : "";
+
+  // Gelir kaynakları: kaynağa göre toplam, dokununca ödemeler; sabit olanlar 📌, gelmeyenler "bekleniyor"
   const iGrup = new Map();
-  for(const t of txs) if(t.type==="income"){
+  for(const t of gOz.txs){
     const l=incomeLabel(t.category);
-    if(!iGrup.has(l)) iGrup.set(l,{icon:"💼", ad:l, tutar:0, items:[]});
+    if(!iGrup.has(l)) iGrup.set(l,{icon:gOz.sabitKaynak.has(l)?"📌":"💼", ad:l, tutar:0, items:[]});
     const g=iGrup.get(l); g.tutar+=t.amount; g.items.push(t);
   }
+  for(const s of bek)
+    iGrup.set(s.kaynak,{icon:"📌", ad:s.kaynak, tutar:s.tutar, items:[], alt:'<span class="g-bek">Bekleniyor</span> · her ay sabit gelir'});
+  for(const s of gelmeyen)
+    iGrup.set(s.kaynak,{icon:"📌", ad:s.kaynak, tutar:0, items:[], alt:`<span class="g-bek">Gelmedi</span> · beklenen ${fmt(s.tutar)}`});
   const kaynakSayisi = iGrup.size;
   document.getElementById("kaynakSay").textContent = kaynakSayisi ? kaynakSayisi+" kaynak" : "";
   document.getElementById("homeKaynaklar").innerHTML = iGrup.size
@@ -954,6 +1034,8 @@ function showTypeCards(){
   document.getElementById("incomeCard").style.display   = addType==="income"?"":"none";
   document.getElementById("transferCard").style.display = addType==="transfer"?"":"none";
   if(addType==="income") renderIncChips();
+  document.getElementById("sikBox").style.display = editingId ? "none" : "";   // kayıt düzenlerken sıklık değişmez
+  selSik();
 }
 const incInput=document.getElementById("incomeSrc");
 function renderIncChips(){
@@ -966,6 +1048,15 @@ document.getElementById("incChips").onclick=e=>{
   incInput.value=b.dataset.l; renderIncChips();
 };
 incInput.oninput=renderIncChips;
+let addSik="bir";   // gelir: "bir" (tek kayıt) | "ay" (sabit gelir, her dönem beklenir)
+function selSik(){
+  document.querySelectorAll("#sikSeg button").forEach(x=>x.classList.toggle("sel", x.dataset.s===addSik));
+  document.getElementById("sikHelp").textContent = addSik==="ay"
+    ? "Kira, maaş, burs gibi her ay gelen para. Her dönem kendiliğinden yazılır; o kaynaktan gerçek ödeme kaydı gelince onun yerine geçer. Ayarlar'dan bitirirsin."
+    : "Ara sıra gelen para: hediye, iade, tek seferlik iş.";
+  document.getElementById("dateLabel").textContent = (addType==="income" && addSik==="ay") ? "Başlangıç tarihi" : "İşlem Tarihi";
+}
+document.getElementById("sikSeg").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; addSik=b.dataset.s; selSik(); };
 let addYon="giris";
 function selYon(){ document.querySelectorAll("#yonChips .chip").forEach(x=>x.classList.toggle("sel", x.dataset.y===addYon)); }
 document.getElementById("yonChips").onclick=e=>{
@@ -1002,7 +1093,7 @@ function setEditUI(on){
 function clearForm(){
   editingId=null;
   // tip + kategori varsayılana dönsün (aksi halde gelir düzenlemesinden sonra yeni kayıt gelir olarak kaydedilir)
-  addType="expense"; addCat="market"; addYon="giris"; incInput.value="";
+  addType="expense"; addCat="market"; addYon="giris"; addSik="bir"; incInput.value="";
   showTypeCards(); selYon();
   catChips.querySelectorAll(".chip").forEach(x=>x.classList.toggle("sel", x.dataset.c===addCat));
   document.getElementById("addAmount").value="";
@@ -1046,6 +1137,15 @@ document.getElementById("saveTx").onclick=()=>{
   if(!date){ toast("Lütfen tarih seçin."); return; }
   const eski = editingId ? state.transactions.find(x=>x.id===editingId) : null;
   const kaynak = incInput.value.trim().slice(0,40) || "Diğer gelir";
+  if(!editingId && addType==="income" && addSik==="ay"){
+    const liste = sabitGelirler().slice();
+    liste.push({id:"sg-"+Date.now().toString(36), kaynak, tutar:amt, bas:date, bit:null});
+    state.settings.sabitGelirler = liste; save();
+    clearForm();
+    toast(`Sabit gelir eklendi: ${kaynak}, her ay ${fmt(amt)}`);
+    viewStart = periodStartFor(toDate(date)); goPage("home"); homeSekme("gelir");
+    return;
+  }
   const trfCat = (eski && eski.type==="transfer") ? eski.category : "birikim";
   const data={
     type: addType,
@@ -1159,6 +1259,7 @@ sdSel.innerHTML=Array.from({length:28},(_,i)=>`<option value="${i+1}">Her ayın 
 function renderSettings(){
   sdSel.value=state.settings.startDay;
   renderFixedList();
+  renderSabitGelir();
   renderKaynakYonet();
   renderKalemYonet();
   renderSecurity();
@@ -1185,16 +1286,19 @@ function renderFixedList(){
 /* ---------- GELİR KAYNAKLARI ve GİDER KALEMLERİ ----------
    Değişiklik anında kaydedilir. Kayıt silinmez: silinen kaynağın/kalemin kayıtları seçilen yere taşınır,
    eşleme yazılır ki sonraki ekstre aktarımı eski adı geri getirmesin. */
-const kaynakSay = l => state.transactions.filter(t=>t.type==="income" && incomeLabel(t.category)===l).length;
+const kaynakSay = l => state.transactions.filter(t=>t.type==="income" && incomeLabel(t.category)===l).length
+                     + sabitGelirler().filter(s=>s.kaynak===l).length;
 const kalemSay  = id => state.transactions.filter(t=>t.type==="expense" && catById(t.category).id===id).length;
 let tasiAcik = null;   // {tur:"kaynak"|"kalem", ad} : taşıma paneli açık olan satır
 
 function yonetimSonrasi(mesaj){
-  save(); renderKaynakYonet(); renderKalemYonet(); renderCatChips(); renderIncChips(); toast(mesaj);
+  save(); renderSabitGelir(); renderKaynakYonet(); renderKalemYonet(); renderCatChips(); renderIncChips(); toast(mesaj);
 }
 function kaynakTasi(eski, hedef, sil){
   for(const t of state.transactions)
     if(t.type==="income" && incomeLabel(t.category)===eski) t.category = hedef;
+  if(state.settings.sabitGelirler)
+    state.settings.sabitGelirler = state.settings.sabitGelirler.map(s=>s.kaynak===eski ? {...s, kaynak:hedef} : s);
   let liste = kaynakListesi().map(l=>l===eski ? hedef : l);
   if(sil) liste = liste.filter(l=>l!==eski);
   state.settings.kaynaklar = [...new Set(liste)];
@@ -1236,6 +1340,60 @@ function renderKalemYonet(){
       <button class="btn small ikincil" data-tasi-vazgec>Vazgeç</button></div></div>` : "");
   }).join("");
 }
+/* Sabit gelir: kaynak + aylık tutar. "Bitir" bu dönemden sonra saymaz, geçmiş dönemler korunur.
+   Bu dönem ya da sonra başlayan (yanlış girilmiş) kalem tamamen silinir. */
+function sabitBitisMetni(s){
+  const g = d => d.getDate()+" "+AYLAR[d.getMonth()]+" "+d.getFullYear();
+  if(!s.bit) return `${g(toDate(s.bas))} itibarıyla her ay`;
+  return `${g(toDate(s.bas))} – ${g(toDate(s.bit))} arası, sonra sayılmaz`;
+}
+function renderSabitGelir(){
+  const box=document.getElementById("sabitGelirList"); if(!box) return;
+  document.getElementById("kaynakDl").innerHTML = kaynakListesi().map(l=>`<option value="${esc(l)}">`).join("");
+  const buDonem = periodStartFor(new Date());
+  const liste = sabitGelirler();
+  if(!liste.length){ box.innerHTML='<div class="empty" style="padding:10px 0">Henüz sabit gelir yok. ⊕ ile ya da Ekle → Gelir → Her ay ile ekle.</div>'; return; }
+  box.innerHTML = liste.map(s=>{
+    const yeni = toDate(s.bas) >= buDonem;
+    const bitti = s.bit && toDate(s.bit) < periodEnd(buDonem);
+    return `<div class="sg-row">
+      <div class="sg-ust">
+        <span class="yon-ico" aria-hidden="true">📌</span>
+        <input type="text" class="sg-kaynak" list="kaynakDl" maxlength="40" value="${esc(s.kaynak)}" data-sg="${s.id}" data-alan="kaynak" placeholder="Kaynak (ör. Kira)" aria-label="Sabit gelirin kaynağı">
+        <input type="number" class="sg-tutar" inputmode="decimal" min="0" value="${s.tutar||""}" data-sg="${s.id}" data-alan="tutar" placeholder="Tutar (₺)" aria-label="Aylık tutar (₺)">
+        ${(bitti||s.bit) ? "" : `<button class="yon-sil" data-sg-bitir="${s.id}">${yeni?"Sil":"Bitir"}</button>`}
+      </div>
+      <div class="sg-alt">${sabitBitisMetni(s)}${(!s.kaynak||!(s.tutar>0))?' · <b style="color:var(--red)">kaynak ve tutar girilince sayılır</b>':''}</div>
+    </div>`;
+  }).join("");
+}
+document.getElementById("sabitGelirList").addEventListener("change",e=>{
+  const inp=e.target.closest("[data-sg]"); if(!inp) return;
+  const liste=sabitGelirler().map(s=>({...s})), s=liste.find(x=>x.id===inp.dataset.sg); if(!s) return;
+  if(inp.dataset.alan==="kaynak"){ const v=inp.value.trim().slice(0,40); if(!v){ inp.value=s.kaynak; toast("Kaynağın adı boş olamaz."); return; } s.kaynak=v; }
+  else { const v=parseFloat(inp.value); if(!(v>0)){ inp.value=s.tutar||""; toast("Tutar 0'dan büyük olmalı."); return; } s.tutar=v; }
+  state.settings.sabitGelirler=liste; save(); renderSabitGelir(); renderKaynakYonet(); renderIncChips(); toast("Sabit gelir kaydedildi ✓");
+});
+document.getElementById("sabitGelirList").addEventListener("click",e=>{
+  const b=e.target.closest("[data-sg-bitir]"); if(!b) return;
+  const buDonem=periodStartFor(new Date());
+  const liste=sabitGelirler().map(s=>({...s})), s=liste.find(x=>x.id===b.dataset.sgBitir); if(!s) return;
+  if(toDate(s.bas) >= buDonem){
+    state.settings.sabitGelirler = liste.filter(x=>x.id!==s.id);
+    yonetimSonrasi(`"${s.kaynak||"Sabit gelir"}" silindi`);
+  }else{
+    if(!confirm(`"${s.kaynak}" bu dönemden sonra sayılmayacak. Geçmiş dönemler ve bu dönem olduğu gibi kalır.\nDevam edilsin mi?`)) return;
+    s.bit = iso(periodEnd(buDonem));
+    state.settings.sabitGelirler = liste;
+    yonetimSonrasi(`"${s.kaynak}" sonraki dönemden itibaren sayılmayacak`);
+  }
+});
+document.getElementById("addSabitGelir").onclick=()=>{
+  const liste=sabitGelirler().slice();
+  liste.push({id:"sg-"+Date.now().toString(36), kaynak:"", tutar:0, bas:iso(periodStartFor(new Date())), bit:null});
+  state.settings.sabitGelirler=liste; save(); renderSabitGelir();
+  const ins=document.querySelectorAll("#sabitGelirList .sg-kaynak"); ins[ins.length-1].focus();
+};
 const kalemListesiKopya = () => kalemler().map(c=>({id:c.id, name:c.name, icon:c.icon}));
 
 document.getElementById("kaynakYonet").addEventListener("change",e=>{
@@ -1350,6 +1508,14 @@ function sanitizeSettings(s){
     if(!ids.has("diger")) k.push({...CATS[CATS.length-1]});
     out.kalemler = k;
   }
+  if(Array.isArray(s.sabitGelirler)){
+    const tarihOk = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v||"")) && !isNaN(toDate(String(v)).getTime());
+    out.sabitGelirler = s.sabitGelirler.slice(0,100).filter(x=>x && tarihOk(x.bas)).map(x=>({
+      id: metin(x.id,40) || "sg-"+Math.random().toString(36).slice(2,9),
+      kaynak: metin(x.kaynak,40),
+      tutar: (isFinite(Number(x.tutar)) && Number(x.tutar)>0) ? Number(x.tutar) : 0,
+      bas: String(x.bas), bit: tarihOk(x.bit) ? String(x.bit) : null }));
+  }
   if(Array.isArray(s.kaynaklar)) out.kaynaklar = [...new Set(s.kaynaklar.map(x=>metin(x,40)).filter(Boolean))].slice(0,100);
   if(s.esle && typeof s.esle==="object"){
     const esle = {};
@@ -1432,10 +1598,10 @@ document.getElementById("restoreFile").onchange=async e=>{
   const yeniAyar = sanitizeSettings(obj.settings);
   const yeniTx   = sanitizeTx(obj.transactions);
   const atilan   = (Array.isArray(obj.transactions)?obj.transactions.length:0) - yeniTx.length;
-  if(!yeniTx.length && !yeniAyar.fixedExpenses.length){
+  if(!yeniTx.length && !yeniAyar.fixedExpenses.length && !(yeniAyar.sabitGelirler||[]).length){
     toast("Yedek boş görünüyor — geri yükleme yapılmadı."); return;
   }
-  const uyari = `Yedek içeriği:\n• ${yeniTx.length} işlem\n• ${yeniAyar.fixedExpenses.length} sabit gider`
+  const uyari = `Yedek içeriği:\n• ${yeniTx.length} işlem\n• ${yeniAyar.fixedExpenses.length} sabit gider\n• ${(yeniAyar.sabitGelirler||[]).length} sabit gelir`
     + (atilan>0 ? `\n• (${atilan} bozuk kayıt atlandı)` : "")
     + `\n\nŞu anki ${state.transactions.length} işlem SİLİNECEK ve yerine bunlar yazılacak.`
     + `\nDesen kilidin değişmeyecek.\n\nDevam edilsin mi?`;
@@ -1524,8 +1690,8 @@ function renderBalance(){
   document.getElementById("balPeriod").textContent = periodLabel(viewStart)+" dönemi";
   const txs = txInPeriod(viewStart);
   const inst = installmentsInPeriod(viewStart);
-  const extraIncome = txs.filter(t=>t.type==="income").reduce((a,t)=>a+t.amount,0);
-  const income = extraIncome;
+  const gOz = gelirOzeti(viewStart);
+  const income = gOz.toplam;
   const fixedBase = state.settings.fixedExpenses.reduce((a,f)=>a+(f.amount||0),0);
   const instSum = inst.reduce((a,i)=>a+i.monthly,0);
   const variable = txs.filter(t=>t.type==="expense").reduce((a,t)=>a+expAmt(t),0);
