@@ -1,5 +1,5 @@
 /* Akıllı Gelir Gider Yöneticisi - Service Worker */
-const CACHE = "gelirgider-v11";
+const CACHE = "gelirgider-v12";
 const SHELL = [
   "./",
   "./index.html",

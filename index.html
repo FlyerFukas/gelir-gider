@@ -194,6 +194,27 @@
   .btn.ikincil{background:#fff;color:var(--primary);border:1.5px solid var(--primary);padding:12px;font-size:15px}
   .btn.small.ikincil{padding:10px 16px;font-size:14px}
 
+  /* ana sayfa sekmeleri: tutar ikinci satırda (üç sekme dar ekranda sığsın) */
+  #homeSeg button{line-height:1.2;padding:8px 4px}
+  #homeSeg button small{display:block;font-size:12px;font-weight:600;opacity:.85;margin-top:2px}
+
+  /* birikim sekmesi: kendi rengi, gelir yeşiliyle karışmasın */
+  :root{--birikim:#0f766e;--birikim-bg:#e3f4f1}
+  .bk-ozet{border-left:5px solid var(--birikim)}
+  .bk-ozet.cekis{border-left-color:var(--red)}
+  .bk-cumle{font-size:22px;font-weight:800;line-height:1.3;letter-spacing:-.01em;color:var(--text)}
+  .bk-cumle b{color:var(--birikim);font-weight:900;white-space:nowrap}
+  .bk-ozet.cekis .bk-cumle b{color:var(--red)}
+  .bk-ikili{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid #eef0f5}
+  .bk-ikili div{display:flex;flex-direction:column;gap:2px}
+  .bk-ikili b{font-size:17px;font-weight:800}
+  .bk-kiyas{margin-top:10px}
+  .bk-bakiye{font-size:28px;font-weight:900;margin:6px 0 2px;color:var(--birikim)}
+  .bk-link{background:none;border:none;color:var(--primary);font:inherit;font-weight:700;font-size:14px;cursor:pointer;padding:10px 0;min-height:44px}
+  .bk-form{margin-top:8px}
+  .bk-satir{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+  .bk-satir .bk-ek{color:var(--birikim)} .bk-satir .bk-cek{color:var(--red)}
+
   /* ayarlar: kaynak ve kalem yönetimi */
   .yon-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f1f6}
   .yon-row:last-child{border-bottom:none}
@@ -265,8 +286,49 @@
     </div>
     <!-- Tek amaç: bu dönem para nereye gitti, nereden geldi. Sekme = aynı dönemin iki yüzü. -->
     <div class="seg" id="homeSeg" role="tablist" aria-label="Ana sayfa görünümü">
-      <button data-v="gider" class="sel" role="tab" aria-selected="true">Giderler <span id="segGiderTut"></span></button>
-      <button data-v="gelir" role="tab" aria-selected="false">Gelirler <span id="segGelirTut"></span></button>
+      <button data-v="gider" class="sel" role="tab" aria-selected="true">Giderler<small id="segGiderTut"></small></button>
+      <button data-v="gelir" role="tab" aria-selected="false">Gelirler<small id="segGelirTut"></small></button>
+      <button data-v="birikim" role="tab" aria-selected="false">Birikim<small id="segBirikimTut"></small></button>
+    </div>
+
+    <!-- Birikim: bu ay birikime ne girdi/çıktı, hesapta ne kadar var, aylar içinde yön. Birikim gider sayılmaz. -->
+    <div id="homeBirikim" style="display:none">
+      <div class="card bk-ozet">
+        <p class="bk-cumle" id="bkCumle"></p>
+        <div class="bk-ikili">
+          <div><span class="muted">Birikime eklenen</span><b id="bkEklenen">₺0</b></div>
+          <div><span class="muted">Birikimden çekilen</span><b id="bkCekilen">₺0</b></div>
+        </div>
+        <p class="muted bk-kiyas" id="bkKiyas"></p>
+      </div>
+
+      <div class="card">
+        <div class="row-between"><h3>Birikim hesabı</h3><button class="bk-link" id="bkBakiyeAc">Bakiyeyi gir</button></div>
+        <div class="bk-bakiye" id="bkBakiye">₺0</div>
+        <p class="muted" id="bkBakiyeNot"></p>
+        <div class="bk-form" id="bkForm" hidden>
+          <label class="fld" for="bkBaslangic">Bugün birikimlerinin toplamı (₺)</label>
+          <div class="yon-ekle" style="margin-top:0">
+            <input type="number" id="bkBaslangic" inputmode="decimal" min="0" step="0.01" placeholder="Örn: 15000">
+            <button class="btn small" id="bkKaydet">Kaydet</button>
+          </div>
+          <p class="muted" style="margin-top:6px">Midas, fon, altın, kenardaki nakit: hepsinin bugünkü değerini topla. Sonraki hareketler bunun üstüne eklenir.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Son 6 ay</h3>
+        <p class="muted">Çubuk yukarı: birikime ekledin. Aşağı: birikimden çektin.</p>
+        <div id="bkGrafik" class="trend"></div>
+      </div>
+
+      <div class="card">
+        <div class="row-between"><h3>Bu ayın hareketleri</h3><span class="muted" id="bkSay"></span></div>
+        <div id="bkListe"></div>
+        <div class="alt-eylem">
+          <button class="btn ikincil" data-git="birikim-ekle">Birikim hareketi ekle</button>
+        </div>
+      </div>
     </div>
 
     <div id="homeGelir" style="display:none">
@@ -963,8 +1025,9 @@ function renderHome(){
   document.getElementById("homeKaynaklar").innerHTML = iGrup.size
     ? grupHtml([...iGrup.values()], income, "gelir")
     : '<div class="empty" style="padding:10px 0">Bu dönemde gelir yok. Gelir ekle ile kaydet ya da Ayarlar\'dan ekstre aktar.</div>';
-  document.getElementById("segGiderTut").textContent = "· "+fmt(totalExp);
-  document.getElementById("segGelirTut").textContent = "· "+fmt(income);
+  document.getElementById("segGiderTut").textContent = fmt(Math.round(totalExp));
+  document.getElementById("segGelirTut").textContent = fmt(Math.round(income));
+  renderBirikim(income, totalExp);
 
   const box = document.getElementById("homeInstallments");
   document.getElementById("taksitCount").textContent = inst.length ? inst.length+" adet" : "";
@@ -995,6 +1058,92 @@ function grupHtml(gruplar, toplam, tur){
       : `<div class="grp"><div style="display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:11px 0 9px">${ozet}</div></div>`;
   }).join("");
 }
+/* ---------- BİRİKİM ----------
+   Birikim yönünden net: birikime yatırılan (yon:"cikis", hesaptan çıkıp birikime gider) artı,
+   birikimden çekilen (yon:"giris") eksi. Bakiye: kullanıcının girdiği bugünkü toplam + o tarihten
+   sonraki net; o tarihten önceki bir an için aradaki net geri düşülür. Piyasa getirisi dahil değil. */
+const bkNet = t => t.type!=="transfer" ? 0 : (t.yon==="cikis" ? t.amount : -t.amount);
+function birikimBakiye(gun){   // gun: Date, o günün sonundaki bakiye
+  const b = state.settings.birikimBaslangic; if(!b) return null;
+  const bt = b.tarih, g = iso(gun);
+  let s = b.tutar;
+  for(const t of state.transactions){ if(t.type!=="transfer") continue;
+    if(t.date>bt && t.date<=g) s += bkNet(t);
+    else if(t.date>g && t.date<=bt) s -= bkNet(t); }
+  return s;
+}
+function renderBirikim(gelir, gider){
+  const txs = txInPeriod(viewStart).filter(t=>t.type==="transfer").sort((a,b)=>b.date.localeCompare(a.date));
+  const eklenen = txs.filter(t=>t.yon==="cikis").reduce((a,t)=>a+t.amount,0);
+  const cekilen = txs.filter(t=>t.yon!=="cikis").reduce((a,t)=>a+t.amount,0);
+  const net = eklenen - cekilen;
+  const buDonem = iso(viewStart)===iso(periodStartFor(new Date()));
+  const zaman = buDonem ? "Bu ay" : periodLabel(viewStart)+" döneminde";
+  const ozet = document.querySelector(".bk-ozet");
+  ozet.classList.toggle("cekis", net<0);
+  document.getElementById("bkCumle").innerHTML =
+    !txs.length ? `${zaman} birikim hareketi yok.`
+    : net>0 ? `${zaman} birikimine <b>${fmt(net)}</b> ekledin.`
+    : net<0 ? `${zaman} birikimden <b>${fmt(-net)}</b> çektin.`
+    : `${zaman} birikime eklediğin kadarını geri çektin.`;
+  document.getElementById("bkEklenen").textContent = fmt(eklenen);
+  document.getElementById("bkCekilen").textContent = fmt(cekilen);
+  document.getElementById("segBirikimTut").textContent = (net>0?"+":"") + fmt(Math.round(net));
+  const artan = gelir - gider;
+  document.getElementById("bkKiyas").textContent =
+    artan>=0 ? `Gelirinden giderini çıkarınca ${fmt(artan)} arttı${net>0?`; bunun ${fmt(Math.min(net,artan))} kadarını birikime koydun`:""}.`
+             : `Giderin gelirini ${fmt(-artan)} aştı${net<0?"; açığı birikimden çektiğin para kapattı":""}.`;
+
+  // Birikim hesabı
+  const pSon = periodEnd(viewStart), bugun = new Date();
+  const an = pSon < bugun ? pSon : bugun;
+  const bak = birikimBakiye(an), b = state.settings.birikimBaslangic;
+  document.getElementById("bkBakiye").textContent = bak==null ? "Bakiye girilmedi" : fmt(bak);
+  document.getElementById("bkBakiye").style.fontSize = bak==null ? "18px" : "";
+  document.getElementById("bkBakiye").style.color = bak==null ? "var(--text-2)" : "";
+  document.getElementById("bkBakiyeAc").textContent = b ? "Bakiyeyi güncelle" : "Bakiyeyi gir";
+  const g = d => { const x=toDate(d); return x.getDate()+" "+AYLAR[x.getMonth()]+" "+x.getFullYear(); };
+  document.getElementById("bkBakiyeNot").textContent = b
+    ? `${g(iso(an))} itibarıyla. ${g(b.tarih)} günü girdiğin ${fmt(b.tutar)} ve sonraki hareketlerden hesaplanır; fon ve hisse getirisi dahil değil.`
+    : "Birikimlerinin bugünkü toplamını bir kez gir. Sonraki eklemeler ve çekişler bunun üstüne yazılır.";
+
+  // Son 6 ay: sıfırdan yukarı/aşağı çubuklar
+  const N=6, donem=[...Array(N)].map((_,i)=>addMonthsToPeriod(viewStart,i-(N-1)));
+  const deger = donem.map(p=>txInPeriod(p).reduce((a,t)=>a+bkNet(t),0));
+  const maks = Math.max(1,...deger.map(Math.abs));
+  const W=480, H=250, ust=24, etk=22, alt=30, yar=(H-ust-etk-alt)/2, orta=ust+yar, sw=W/N;   // etk: eksi çubuğun etiketi, alt: ay adı
+  const kisa = v => (v<0?"−":"+")+(Math.abs(v)>=1000 ? (Math.abs(v)/1000).toLocaleString("tr-TR",{maximumFractionDigits:1})+" bin" : Math.round(Math.abs(v)));
+  const svg = donem.map((p,i)=>{ const v=deger[i], hgt=Math.abs(v)/maks*yar, x=i*sw+sw*0.22, w=sw*0.56;
+    const y = v>=0 ? orta-hgt : orta, renk = v>=0 ? "var(--birikim)" : "var(--red)", son=i===N-1;
+    const ay = AYLAR[(state.settings.startDay===1?p:periodEnd(p)).getMonth()].slice(0,3);
+    return `<rect x="${x}" y="${y}" width="${w}" height="${Math.max(hgt, v?2:0)}" rx="3" fill="${renk}" opacity="${son?1:.55}"/>`
+      + (v ? `<text x="${x+w/2}" y="${v>=0? y-6 : y+hgt+18}" text-anchor="middle" font-size="17" fill="var(--text-2)">${kisa(v)}</text>` : "")
+      + `<text x="${x+w/2}" y="${H-6}" text-anchor="middle" font-size="18" font-weight="${son?800:500}" fill="var(--text${son?"":"-2"})">${ay}</text>`; }).join("");
+  document.getElementById("bkGrafik").innerHTML =
+    `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Son 6 ayın net birikimi: ${donem.map((p,i)=>periodLabel(p)+" "+fmt(deger[i])).join(", ")}">`
+    + `<line x1="0" x2="${W}" y1="${orta}" y2="${orta}" stroke="#c9cdd9" stroke-width="1"/>${svg}</svg>`;
+
+  // Bu ayın hareketleri
+  document.getElementById("bkSay").textContent = txs.length ? txs.length+" hareket" : "";
+  document.getElementById("bkListe").innerHTML = txs.length
+    ? txs.map(t=>{ const d=toDate(t.date), ek=t.yon==="cikis";
+        return `<button class="mini-row mr-btn bk-satir" data-edit="${t.id}" title="Düzenle"><span><span class="mr-tarih">${d.getDate()} ${AYLAR[d.getMonth()].slice(0,3)}</span>${esc(t.name)}</span><b class="${ek?"bk-ek":"bk-cek"}">${ek?"+":"−"}${fmt(t.amount)}</b></button>`; }).join("")
+    : '<div class="empty" style="padding:10px 0">Bu ay birikime para eklemedin, çekmedin de. Midas, fon ya da altına para koyunca buraya ekle.</div>';
+}
+document.getElementById("bkBakiyeAc").onclick=()=>{
+  const f=document.getElementById("bkForm"); f.hidden=!f.hidden;
+  if(!f.hidden){ const b=state.settings.birikimBaslangic; const inp=document.getElementById("bkBaslangic");
+    inp.value = b ? Math.round(birikimBakiye(new Date())*100)/100 : ""; inp.focus(); }
+};
+document.getElementById("bkKaydet").onclick=()=>{
+  const v=parseFloat(document.getElementById("bkBaslangic").value);
+  if(!(v>=0) || !isFinite(v)){ toast("Bakiye için 0 ya da daha büyük bir tutar yaz."); return; }
+  state.settings.birikimBaslangic = {tutar:v, tarih:iso(new Date())}; save();
+  document.getElementById("bkForm").hidden=true;
+  toast(`Birikim bakiyesi kaydedildi: ${fmt(v)} ✓`); renderHome();
+};
+document.getElementById("bkBaslangic").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("bkKaydet").click(); });
+
 let homeView = "gider";
 function homeSekme(v){
   homeView = v;
@@ -1002,12 +1151,14 @@ function homeSekme(v){
     b.classList.toggle("sel",on); b.setAttribute("aria-selected",on); });
   document.getElementById("homeGider").style.display = v==="gider" ? "" : "none";
   document.getElementById("homeGelir").style.display = v==="gelir" ? "" : "none";
+  document.getElementById("homeBirikim").style.display = v==="birikim" ? "" : "none";
 }
 document.getElementById("homeSeg").onclick=e=>{ const b=e.target.closest("button"); if(b) homeSekme(b.dataset.v); };
 document.getElementById("page-home").addEventListener("click",e=>{
   const ed=e.target.closest("[data-edit]"); if(ed){ startEdit(ed.dataset.edit); return; }
   const git=e.target.closest("[data-git]"); if(!git) return;
   const g=git.dataset.git;
+  if(g==="birikim-ekle"){ clearForm(); addType="transfer"; addYon="cikis"; showTypeCards(); selYon(); goPage("add"); return; }
   if(g==="gider-ekle"||g==="gelir-ekle"){ clearForm(); addType = g==="gelir-ekle"?"income":"expense"; showTypeCards(); goPage("add"); return; }
   goPage("settings");
   document.getElementById(g==="kaynaklar"?"kaynakKart":"kalemKart").scrollIntoView({block:"start"});
@@ -1516,6 +1667,10 @@ function sanitizeSettings(s){
       tutar: (isFinite(Number(x.tutar)) && Number(x.tutar)>0) ? Number(x.tutar) : 0,
       bas: String(x.bas), bit: tarihOk(x.bit) ? String(x.bit) : null }));
   }
+  if(s.birikimBaslangic && typeof s.birikimBaslangic==="object"){
+    const t=Number(s.birikimBaslangic.tutar), d=String(s.birikimBaslangic.tarih||"");
+    if(isFinite(t) && t>=0 && /^\d{4}-\d{2}-\d{2}$/.test(d)) out.birikimBaslangic={tutar:t, tarih:d};
+  }
   if(Array.isArray(s.kaynaklar)) out.kaynaklar = [...new Set(s.kaynaklar.map(x=>metin(x,40)).filter(Boolean))].slice(0,100);
   if(s.esle && typeof s.esle==="object"){
     const esle = {};
@@ -1647,6 +1802,15 @@ document.getElementById("importFile").onchange=async e=>{
   const degisen = gelen.filter(t=>{ const m=mevcut.get(t.extId);
     return m && !m.elle && ALAN.some(k=>(m[k]??null)!==(t[k]??null)); });
   const ayni = gelen.length - yeni.length - degisen.length;
+  // Kapsam: dosyanın her hesap için kapsadığı tarih aralığı. O aralıkta ekstreden gelmiş ama dosyada
+  // artık olmayan kayıt (düzeltilen okuma hatası, ayıklanan çift kayıt) kaldırılır; elle düzenlenene dokunulmaz.
+  const kapsam = (obj.kapsam && typeof obj.kapsam==="object") ? obj.kapsam : null;
+  const gelenId = new Set(gelen.map(t=>t.extId));
+  const kalkan = !kapsam ? [] : state.transactions.filter(t=>{
+    if(!t.extId || t.elle || !t.hesap || gelenId.has(t.extId)) return false;
+    const k = Object.prototype.hasOwnProperty.call(kapsam,t.hesap) ? kapsam[t.hesap] : null;
+    return k && typeof k.ilk==="string" && typeof k.son==="string" && t.date>=k.ilk && t.date<=k.son;
+  });
   const gunAyar = Math.round(Number(obj.baslangicGunu));
   // Dönem başlangıcı ekstre motoruyla aynı olsun; işlem değişmese de sorulur (motorun günü değişmiş olabilir).
   const gunuSor = () => {
@@ -1656,7 +1820,7 @@ document.getElementById("importFile").onchange=async e=>{
     }
     return false;
   };
-  if(!yeni.length && !degisen.length){
+  if(!yeni.length && !degisen.length && !kalkan.length){
     if(gunuSor()){ save(); viewStart = periodStartFor(new Date()); renderSettings(); toast(`İşlemler zaten güncel. Dönem artık her ayın ${gunAyar}. günü başlıyor ✓`); }
     else toast(`Değişiklik yok: ${ayni} işlemin hepsi zaten güncel.`);
     return;
@@ -1670,18 +1834,21 @@ document.getElementById("importFile").onchange=async e=>{
       + `• ${say("expense")} gider\n• ${say("income")} gelir\n• ${say("transfer")} birikim/yatırım hareketi\n\n`;
   }
   if(degisen.length) mesaj += `${degisen.length} işlemin kategorisi ya da bilgisi güncellenecek.\n\n`;
+  if(kalkan.length) mesaj += `${kalkan.length} eski kayıt ekstrede artık yok (hatalı okunmuş ya da çift sayılmış), kaldırılacak.\n\n`;
   mesaj += (ayni ? `${ayni} işlem zaten güncel, dokunulmayacak.\n` : "")
     + `Elle girdiğin ve uygulamada düzenlediğin kayıtlar değişmez.\nDevam edilsin mi?`;
   if(!confirm(mesaj)) return;
   for(const t of degisen){ const m=mevcut.get(t.extId);
     for(const k of ALAN){ if(t[k]===undefined) delete m[k]; else m[k]=t[k]; } }
+  if(kalkan.length){ const sil=new Set(kalkan.map(t=>t.id)); state.transactions=state.transactions.filter(t=>!sil.has(t.id)); }
   const id = "akt-"+Date.now();
   for(const t of yeni){ t.aktarim=id; state.transactions.push(t); }
   if(yeni.length) state.settings.sonAktarim = {id, tarih:new Date().toISOString()};
   gunuSor();
   save();
   viewStart = periodStartFor(new Date());
-  toast([yeni.length && `${yeni.length} işlem eklendi`, degisen.length && `${degisen.length} işlem güncellendi`].filter(Boolean).join(", ")+" ✓");
+  toast([yeni.length && `${yeni.length} işlem eklendi`, degisen.length && `${degisen.length} işlem güncellendi`,
+         kalkan.length && `${kalkan.length} eski kayıt kaldırıldı`].filter(Boolean).join(", ")+" ✓");
   renderSettings();
 };
 document.getElementById("undoImport").onclick=()=>{
