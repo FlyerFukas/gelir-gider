@@ -1,5 +1,7 @@
 # Akıllı Gelir Gider Yöneticisi
 
+<img src=".github/kapak.png" alt="Gelir Gider: çevrimdışı çalışan, her kaydı telefonda tutan gelir gider takip uygulaması." width="100%">
+
 Türkçe, tek dosyalık gelir–gider takip PWA'sı. Kurulum gerektirmez, telefona
 ana ekrana eklenebilir ve **internetsiz çalışır**.
 
